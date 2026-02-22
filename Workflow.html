@@ -1,0 +1,3245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로젝트 Gantt Chart 관리 도구</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+ 
+        body {
+            font-family: 'Malgun Gothic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+ 
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+ 
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: #16213e;
+            padding: 20px;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+        }
+ 
+        .sidebar h1 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #e94560;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+ 
+        .sidebar-actions {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #0f3460;
+        }
+
+        .sidebar h1::before {
+            content: "📊";
+        }
+ 
+        .add-project-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+ 
+        .add-project-btn:hover {
+            background: #ff6b6b;
+        }
+
+        .sidebar-btn {
+            background: #0f3460;
+            color: #aaa;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .sidebar-btn:hover {
+            background: #16213e;
+            color: #e94560;
+        }
+ 
+        .project-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+ 
+        .project-item {
+            padding: 12px 15px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+ 
+        .project-item:hover {
+            background: #0f3460;
+        }
+ 
+        .project-item.active {
+            background: #0f3460;
+            border-left: 3px solid #e94560;
+        }
+ 
+        .project-item-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+ 
+        .project-item-actions {
+            display: none;
+            gap: 5px;
+        }
+ 
+        .project-item:hover .project-item-actions {
+            display: flex;
+        }
+ 
+        .project-item-actions button {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            padding: 2px 5px;
+            font-size: 0.85rem;
+        }
+ 
+        .project-item-actions button:hover {
+            color: #e94560;
+        }
+ 
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+ 
+        .header {
+            padding: 20px 30px;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+ 
+        .header h2 {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+ 
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+ 
+        .header-actions button {
+            background: #0f3460;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+ 
+        .header-actions button:hover {
+            background: #e94560;
+        }
+ 
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+ 
+        /* Gantt Chart Area */
+        .gantt-area {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+        }
+ 
+        .gantt-container {
+            min-width: 100%;
+        }
+ 
+        .gantt-header {
+            display: flex;
+            border-bottom: 2px solid #0f3460;
+            position: sticky;
+            top: 0;
+            background: #1a1a2e;
+            z-index: 10;
+        }
+ 
+        .gantt-task-header {
+            width: 250px;
+            min-width: 250px;
+            padding: 10px 15px;
+            font-weight: bold;
+            color: #e94560;
+            border-right: 1px solid #0f3460;
+        }
+ 
+        .gantt-timeline-header {
+            flex: 1;
+            display: flex;
+        }
+ 
+        .gantt-day {
+            width: 40px;
+            min-width: 40px;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 0.75rem;
+            color: #aaa;
+            border-right: 1px solid #0f3460;
+        }
+ 
+        .gantt-day.weekend {
+            background: rgba(233, 69, 96, 0.1);
+        }
+ 
+        .gantt-day.today {
+            background: rgba(233, 69, 96, 0.3);
+            color: #e94560;
+            font-weight: bold;
+        }
+ 
+        .gantt-body {
+            position: relative;
+        }
+
+        .gantt-dependency-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .dependency-line {
+            fill: none;
+            stroke: #e94560;
+            stroke-width: 2;
+            stroke-dasharray: 6 3;
+            opacity: 0.7;
+        }
+
+        .dep-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #aaa;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 15;
+            cursor: crosshair;
+            opacity: 0;
+            transition: opacity 0.15s, transform 0.15s;
+            pointer-events: auto;
+        }
+        .dep-dot:hover, .dep-dot.active {
+            opacity: 1 !important;
+            transform: translateY(-50%) scale(1.4);
+            background: #e94560;
+        }
+        .gantt-bar:hover .dep-dot {
+            opacity: 0.7;
+        }
+        .dep-dot-left {
+            left: -5px;
+        }
+        .dep-dot-right {
+            right: -5px;
+        }
+        .dep-drag-line {
+            stroke: #e94560;
+            stroke-width: 2;
+            stroke-dasharray: 4 4;
+            pointer-events: none;
+        }
+        .dep-dot-circle {
+            pointer-events: all;
+            cursor: crosshair;
+        }
+ 
+        .gantt-row {
+            display: flex;
+            border-bottom: 1px solid #0f3460;
+            min-height: 50px;
+        }
+ 
+        .gantt-row:hover {
+            background: rgba(15, 52, 96, 0.3);
+        }
+ 
+        .gantt-task-cell {
+            width: 250px;
+            min-width: 250px;
+            padding: 10px 15px;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+ 
+        .task-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+ 
+        .task-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+ 
+        .task-name:hover {
+            color: #e94560;
+        }
+ 
+        .gantt-timeline-cell {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+ 
+        .gantt-cell-day {
+            width: 40px;
+            min-width: 40px;
+            border-right: 1px solid #0f3460;
+        }
+ 
+        .gantt-cell-day.weekend {
+            background: rgba(233, 69, 96, 0.05);
+        }
+ 
+        .gantt-bar {
+            position: absolute;
+            height: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 0.75rem;
+            color: white;
+            transition: opacity 0.2s;
+            overflow: visible;
+            white-space: nowrap;
+        }
+ 
+        .gantt-bar:hover {
+            opacity: 0.8;
+        }
+ 
+        .gantt-bar-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px 0 0 4px;
+        }
+ 
+        .gantt-bar-text {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 0;
+        }
+ 
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            text-align: center;
+            padding: 40px;
+        }
+ 
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+ 
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+ 
+        .empty-state p {
+            color: #666;
+        }
+ 
+        /* Memo Panel */
+        .memo-panel {
+            width: 320px;
+            background: #16213e;
+            border-left: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+        }
+ 
+        .memo-panel.hidden {
+            display: none;
+        }
+ 
+        .memo-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+ 
+        .memo-header h3 {
+            font-size: 1rem;
+            color: #e94560;
+        }
+ 
+        .memo-close {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+ 
+        .memo-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+ 
+        .memo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+ 
+        .memo-item {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #e94560;
+        }
+ 
+        .memo-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+ 
+        .memo-item-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+ 
+        .memo-item-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+ 
+        .memo-item-actions button {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+ 
+        .memo-item-actions button:hover {
+            color: #e94560;
+        }
+ 
+        .add-memo-btn {
+            margin-top: 15px;
+            background: #0f3460;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+        }
+ 
+        .add-memo-btn:hover {
+            background: #e94560;
+        }
+ 
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+ 
+        .modal-overlay.hidden {
+            display: none;
+        }
+ 
+        .modal {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+ 
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #e94560;
+        }
+ 
+        .form-group {
+            margin-bottom: 20px;
+        }
+ 
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+ 
+        .form-group input,
+
+        
+        .form-group textarea,
+
+
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #0f3460;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 1rem;
+        }
+ 
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+ 
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+ 
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+ 
+        .form-row .form-group {
+            flex: 1;
+        }
+ 
+        .color-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+ 
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+ 
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+ 
+        .color-option.selected {
+            border-color: #fff;
+        }
+ 
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+ 
+        .modal-actions button {
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            border: none;
+        }
+ 
+        .btn-cancel {
+            background: #0f3460;
+            color: #fff;
+        }
+ 
+        .btn-save {
+            background: #e94560;
+            color: #fff;
+        }
+ 
+        .btn-delete {
+            background: #ff4757;
+            color: #fff;
+        }
+ 
+        .modal-actions button:hover {
+            opacity: 0.9;
+        }
+ 
+        /* Zoom Controls */
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+ 
+        .zoom-controls button {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+ 
+        .zoom-controls span {
+            margin: 0 10px;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+ 
+        /* Progress Slider */
+        .progress-slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: #0f3460;
+            border-radius: 4px;
+            outline: none;
+        }
+ 
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+ 
+        .progress-value {
+            text-align: center;
+            margin-top: 5px;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+ 
+        /* Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+ 
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+ 
+        ::-webkit-scrollbar-thumb {
+            background: #0f3460;
+            border-radius: 4px;
+        }
+ 
+        ::-webkit-scrollbar-thumb:hover {
+            background: #e94560;
+        }
+ 
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+                padding: 10px;
+            }
+ 
+            .sidebar h1 {
+                font-size: 0;
+            }
+ 
+            .sidebar h1::before {
+                font-size: 1.5rem;
+            }
+ 
+            .add-project-btn {
+                padding: 10px;
+                font-size: 0;
+            }
+ 
+            .add-project-btn::before {
+                content: "+";
+                font-size: 1.2rem;
+            }
+ 
+            .project-item-name {
+                display: none;
+            }
+ 
+            .memo-panel {
+                position: fixed;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 100;
+            }
+        }
+
+        /* Dashboard Styles */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .dashboard-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #0f3460;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            height: 180px;
+            position: relative;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            border-color: #e94560;
+        }
+
+        .dashboard-card h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .dashboard-card p {
+            color: #aaa;
+            font-size: 0.9rem;
+            flex: 1;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .dashboard-card-meta {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .dashboard-card.add-new {
+            border: 2px dashed #0f3460;
+            background: transparent;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+        }
+
+        .dashboard-card.add-new:hover {
+            border-color: #e94560;
+            color: #e94560;
+            background: rgba(233, 69, 96, 0.05);
+        }
+
+        .add-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-card-delete {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+            z-index: 10;
+        }
+
+        .dashboard-card:hover .dashboard-card-delete {
+            opacity: 1;
+        }
+
+        .dashboard-card-delete:hover {
+            background: #ff4757;
+        }
+
+        .gantt-bar {
+            cursor: grab;
+        }
+        
+        .gantt-bar:active {
+            cursor: grabbing;
+        }
+
+        .gantt-bar-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            cursor: ew-resize;
+            background: transparent;
+            z-index: 10;
+        }
+
+        .gantt-bar-handle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Task Highlight Animation */
+        @keyframes highlightPulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); transform: translateY(-50%) scale(1); z-index: 100; }
+            50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); transform: translateY(-50%) scale(1.1); z-index: 100; }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); transform: translateY(-50%) scale(1); z-index: auto; }
+        }
+        .highlight-task {
+            animation: highlightPulse 1.5s ease-out infinite;
+            border: 2px solid #fff !important;
+        }
+
+        .gantt-bar.completed .gantt-bar-text {
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        .gantt-bar.completed {
+            opacity: 0.6;
+            filter: grayscale(0.6);
+        }
+
+        .gantt-task-cell.completed .task-name {
+            text-decoration: line-through;
+            color: #777;
+            font-style: italic;
+        }
+
+        /* HTML5 Drag and Drop Styles */
+        .dragging {
+            opacity: 0.5;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 6px;
+            padding: 5px 0;
+            min-width: 150px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: none;
+        }
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: #eee;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .context-menu-item:hover {
+            background: #0f3460;
+            color: #e94560;
+        }
+
+        /* Trash Zone */
+        .trash-zone {
+            margin-top: 10px;
+            padding: 15px;
+            border: 2px dashed #0f3460;
+            border-radius: 8px;
+            text-align: center;
+            color: #666;
+            transition: all 0.2s;
+            cursor: default;
+        }
+        .trash-zone:hover {
+            border-color: #ff4757;
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        /* Sidebar Tree Group */
+        .sidebar-group {
+            margin-bottom: 2px;
+        }
+
+        .sidebar-group-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            color: #888;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 6px;
+            transition: all 0.15s;
+            gap: 6px;
+        }
+
+        .sidebar-group-header:hover {
+            color: #ccc;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .sidebar-group-header .group-toggle {
+            font-size: 0.6rem;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+
+        .sidebar-group.collapsed .group-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .sidebar-group-header .group-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-group-header .group-actions {
+            display: none;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-group-header:hover .group-actions {
+            display: flex;
+        }
+
+        .sidebar-group-header .group-actions button {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0 3px;
+            font-size: 0.85rem;
+            line-height: 1;
+        }
+
+        .sidebar-group-header .group-actions button:hover {
+            color: #e94560;
+        }
+
+        .sidebar-group-children {
+            padding-left: 12px;
+            overflow: hidden;
+            transition: max-height 0.2s ease;
+        }
+
+        .sidebar-group.collapsed .sidebar-group-children {
+            display: none;
+        }
+
+        .sidebar-group-header .group-count {
+            font-size: 0.7rem;
+            color: #555;
+            margin-left: 4px;
+        }
+
+        /* Search */
+        .search-bar {
+            margin-bottom: 15px;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #0f3460;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        .search-highlight {
+            background: #feca57aa !important;
+            border: 1px solid #feca57;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h1 onclick="goToDashboard()">Daywalker</h1>
+            <div class="search-bar">
+                <input type="search" id="searchInput" placeholder="프로젝트/태스크 검색..." oninput="handleSearch(this.value)">
+            </div>
+            <button class="add-project-btn" onclick="goToDashboard()" style="background: #0f3460; margin-bottom: 10px;">📊 대시보드</button>
+            <button class="add-project-btn" onclick="openProjectModal()">+ 새 프로젝트</button>
+            <button class="add-project-btn" onclick="addGroup()" style="background: #0f3460; margin-bottom: 10px; font-size: 0.85rem;">📁 새 그룹</button>
+            <div class="project-list" id="projectList"></div>
+            <div class="sidebar-actions">
+                <button class="add-project-btn sidebar-btn" id="alwaysOnTopBtn" onclick="toggleAlwaysOnTop()" style="display:none;">📌 항상 위에 표시</button>
+                <button class="add-project-btn sidebar-btn" onclick="exportData()">💾 데이터 내보내기</button>
+                <button class="add-project-btn sidebar-btn" onclick="triggerImport()">📂 데이터 가져오기</button>
+                <div class="trash-zone" ondragover="handleDragOver(event)" ondrop="handleTrashDrop(event)">
+                    🗑️ 휴지통 (드래그하여 삭제)
+                </div>
+                <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(this)">
+                <div id="syncStatus" style="text-align:center; font-size:0.75rem; color:#666; margin-top:12px; padding:6px; border-top:1px solid #1a1a2e;">● 연결 확인 중...</div>
+            </div>
+        </aside>
+ 
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h2 id="currentProjectName" onclick="enableInlineEdit(this, 'name')" style="cursor: pointer;" title="클릭하여 수정">프로젝트를 선택하세요</h2>
+                    <p id="currentProjectDescription" onclick="enableInlineEdit(this, 'description')" style="color: #aaa; font-size: 0.9rem; margin-top: 5px; display: none; white-space: pre-wrap; cursor: pointer;" title="클릭하여 수정"></p>
+                </div>
+                <div class="header-actions" id="headerActions" style="display: none;">
+                    <div class="zoom-controls">
+                        <button onclick="zoomOut()" title="축소">−</button>
+                        <span id="zoomLevel">100%</span>
+                        <button onclick="zoomIn()" title="확대">+</button>
+                    </div>
+                    <button onclick="exportToCSV()">📊 CSV 내보내기</button>
+                    <button onclick="toggleMemo()">📝 메모</button>
+                    <button onclick="openTaskModal()">+ 태스크 추가</button>
+                </div>
+            </header>
+ 
+            <div class="content-wrapper">
+                <div class="gantt-area" id="ganttArea">
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>프로젝트를 선택하거나 새로 만드세요</h3>
+                        <p>왼쪽 사이드바에서 프로젝트를 선택하거나<br>새 프로젝트를 추가하세요</p>
+                    </div>
+                    <div class="gantt-container" id="ganttContainer" style="display: none;"></div>
+                    <div class="dashboard-grid" id="dashboardGrid" style="display: none;"></div>
+                </div>
+ 
+                <!-- Memo Panel -->
+                <aside class="memo-panel hidden" id="memoPanel">
+                    <div class="memo-header">
+                        <h3>📝 프로젝트 메모</h3>
+                        <button class="memo-close" onclick="toggleMemo()">×</button>
+                    </div>
+                    <div class="memo-content">
+                        <div class="memo-list" id="memoList"></div>
+                        <button class="add-memo-btn" onclick="openMemoModal()">+ 메모 추가</button>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+ 
+    <!-- Project Modal -->
+    <div class="modal-overlay hidden" id="projectModal">
+        <div class="modal">
+            <h3 id="projectModalTitle">새 프로젝트</h3>
+            <div class="form-group">
+                <label>프로젝트 이름</label>
+                <input type="text" id="projectName" placeholder="프로젝트 이름을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label>설명 (선택)</label>
+                <textarea id="projectDescription" placeholder="프로젝트 설명을 입력하세요"></textarea>
+            </div>
+            <div class="form-group">
+                <label>그룹 (폴더)</label>
+                <input type="text" id="projectGroup" placeholder="예: 업무, 개인, 2024년 (비워두면 '기본')">
+            </div>
+            <div class="form-group">
+                <label>프로젝트 색상</label>
+                <div class="color-options" id="projectColorOptions"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeProjectModal()">취소</button>
+                <button class="btn-delete" id="deleteProjectBtn" onclick="deleteProject()" style="display: none;">삭제</button>
+                <button class="btn-save" onclick="saveProject()">저장</button>
+            </div>
+        </div>
+    </div>
+ 
+    <!-- Task Modal -->
+    <div class="modal-overlay hidden" id="taskModal">
+        <div class="modal">
+            <h3 id="taskModalTitle">새 태스크</h3>
+            <div class="form-group">
+                <label>태스크 이름</label>
+                <input type="text" id="taskName" placeholder="태스크 이름을 입력하세요">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>시작일</label>
+                    <input type="date" id="taskStartDate">
+                </div>
+                <div class="form-group">
+                    <label>종료일</label>
+                    <input type="date" id="taskEndDate">
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="taskCompleted" style="width: auto;">
+                    태스크 완료
+                </label>
+            </div>
+            <div class="form-group">
+                <label>선행 태스크 (의존성)</label>
+                <div class="checkbox-list" id="taskDependencies"></div>
+            </div>
+            <div class="form-group">
+                <label>색상</label>
+                <div class="color-options" id="taskColorOptions"></div>
+            </div>
+            <div class="form-group">
+                <label>메모 (선택)</label>
+                <textarea id="taskMemo" placeholder="태스크 메모를 입력하세요"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeTaskModal()">취소</button>
+                <button class="btn-delete" id="deleteTaskBtn" onclick="deleteTask()" style="display: none;">삭제</button>
+                <button class="btn-save" onclick="saveTask()">저장</button>
+            </div>
+        </div>
+    </div>
+ 
+    <!-- Memo Modal -->
+    <div class="modal-overlay hidden" id="memoModal">
+        <div class="modal">
+            <h3 id="memoModalTitle">새 메모</h3>
+            <div class="form-group">
+                <label>메모 내용</label>
+                <textarea id="memoContent" placeholder="메모 내용을 입력하세요" style="min-height: 150px;"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeMemoModal()">취소</button>
+                <button class="btn-delete" id="deleteMemoBtn" onclick="deleteMemo()" style="display: none;">삭제</button>
+                <button class="btn-save" onclick="saveMemo()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item" id="ctxMenuComplete" onclick="handleMenuAction('toggleComplete')">✅ 완료</div>
+        <div class="context-menu-item" id="ctxMenuNewProject" onclick="handleMenuAction('newProject')">➕ 새 프로젝트</div>
+        <div class="context-menu-item" id="ctxMenuNewSeparator" onclick="handleMenuAction('newSeparator')">➖ 새 구분선</div>
+        <div class="context-menu-item" id="ctxMenuRenameSeparator" onclick="handleMenuAction('renameSeparator')">✏️ 구분선 이름 변경</div>
+        <div class="context-menu-item" id="ctxMenuDeleteSeparator" onclick="handleMenuAction('deleteSeparator')" style="color: #ff4757;">🗑️ 구분선 삭제</div>
+        <div class="context-menu-item" onclick="handleMenuAction('edit')">✏️ 수정</div>
+        <div class="context-menu-item" id="ctxMenuDuplicate" onclick="handleMenuAction('duplicate')">📄 복제</div>
+        <div class="context-menu-item" onclick="handleMenuAction('delete')" style="color: #ff4757;">🗑️ 삭제</div>
+    </div>
+ 
+    <script>
+        // ===== Firebase 설정 =====
+        // 아래 firebaseConfig를 본인의 Firebase 프로젝트 설정으로 교체하세요.
+        // Firebase Console > 프로젝트 설정 > 일반 > 내 앱 > SDK 설정에서 복사
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAE3xKYtrg2sn2AuLNE1lMN2nUcIv6kDeg",
+            authDomain: "sj-dash-9b65d.firebaseapp.com",
+            databaseURL: "https://sj-dash-9b65d-default-rtdb.firebaseio.com",
+            projectId: "sj-dash-9b65d",
+            storageBucket: "sj-dash-9b65d.firebasestorage.app",
+            messagingSenderId: "751850940500",
+            appId: "1:751850940500:web:b81b474a0d3acdbcb4a5c1"
+        };
+
+        // 워크스페이스 ID: 같은 ID를 쓰는 팀원끼리 데이터 공유
+        const WORKSPACE_ID = 'default';
+
+        // Firebase 초기화
+        let firebaseEnabled = false;
+        let _syncingFromFirebase = false;
+        let _firebaseRef = null;
+
+        if (FIREBASE_CONFIG.apiKey && typeof firebase !== 'undefined') {
+            try {
+                firebase.initializeApp(FIREBASE_CONFIG);
+                _firebaseRef = firebase.database().ref(`workspaces/${WORKSPACE_ID}/projects`);
+                firebaseEnabled = true;
+            } catch (e) {
+                console.warn('Firebase 초기화 실패, localStorage 모드로 동작합니다.', e);
+            }
+        }
+
+        // ===== 동기화 상태 표시 =====
+        function setSyncStatus(status) {
+            const el = document.getElementById('syncStatus');
+            if (!el) return;
+            if (status === 'synced') {
+                el.textContent = '● 실시간 동기화 중';
+                el.style.color = '#1dd1a1';
+            } else if (status === 'saving') {
+                el.textContent = '● 저장 중...';
+                el.style.color = '#feca57';
+            } else if (status === 'offline') {
+                el.textContent = '● 오프라인 (로컬 저장)';
+                el.style.color = '#ff6b6b';
+            }
+        }
+
+        // Color Palette
+        const COLORS = [
+            '#e94560', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1',
+            '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff', '#c8d6e5'
+        ];
+
+        // App State
+        let state = {
+            projects: [],
+            currentProjectId: null,
+            zoom: 100,
+            dayWidth: 40,
+            editingProjectId: null,
+            editingTaskId: null,
+            editingMemoId: null,
+            filterCompleted: false,
+            highlightTaskId: null,
+            contextMenuTarget: null,
+            collapsedGroups: {}
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            if (!firebaseEnabled) {
+                renderProjects();
+            }
+            setDefaultDates();
+            
+            document.addEventListener('click', () => {
+                hideContextMenu();
+            });
+        });
+ 
+        // ===== 데이터 저장/로드 (Firebase + localStorage) =====
+        function loadState() {
+            // 1) 개인 UI 상태는 항상 localStorage에서 로드
+            const localUI = localStorage.getItem('ganttLocalUI');
+            if (localUI) {
+                const parsed = JSON.parse(localUI);
+                state.currentProjectId = parsed.currentProjectId || null;
+                state.filterCompleted = parsed.filterCompleted || false;
+                state.collapsedGroups = parsed.collapsedGroups || {};
+            }
+
+            // 2) Firebase 모드: 실시간 리스너로 projects 동기화
+            if (firebaseEnabled && _firebaseRef) {
+                _firebaseRef.on('value', (snapshot) => {
+                    _syncingFromFirebase = true;
+                    let data = snapshot.val();
+                    // Firebase는 배열을 객체로 변환할 수 있으므로 복원
+                    if (data && !Array.isArray(data)) {
+                        data = Object.values(data);
+                    }
+                    // 각 프로젝트에 tasks, memos 배열이 있는지 보장
+                    state.projects = (data || []).map(p => ({
+                        ...p,
+                        tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
+                        memos: Array.isArray(p.memos) ? p.memos : (p.memos ? Object.values(p.memos) : [])
+                    }));
+                    setSyncStatus('synced');
+                    renderProjects();
+                    renderGantt();
+                    _syncingFromFirebase = false;
+                });
+
+                // 연결 상태 모니터링
+                firebase.database().ref('.info/connected').on('value', (snap) => {
+                    if (snap.val() === true) {
+                        setSyncStatus('synced');
+                    } else {
+                        setSyncStatus('offline');
+                    }
+                });
+
+                // 기존 localStorage 데이터 → Firebase 마이그레이션
+                const legacy = localStorage.getItem('ganttManagerState');
+                if (legacy) {
+                    const parsed = JSON.parse(legacy);
+                    if (parsed.projects && parsed.projects.length > 0) {
+                        _firebaseRef.once('value').then((snapshot) => {
+                            const existing = snapshot.val();
+                            if (!existing || existing.length === 0) {
+                                _firebaseRef.set(parsed.projects);
+                                console.log('localStorage 데이터를 Firebase로 마이그레이션 완료');
+                            }
+                            localStorage.removeItem('ganttManagerState');
+                        });
+                    }
+                }
+            } else {
+                // 3) Firebase 없으면 기존 localStorage 폴백
+                setSyncStatus('offline');
+                const saved = localStorage.getItem('ganttManagerState');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state.projects = parsed.projects || [];
+                    state.currentProjectId = parsed.currentProjectId || null;
+                    state.filterCompleted = parsed.filterCompleted || false;
+                    state.collapsedGroups = parsed.collapsedGroups || {};
+
+                    // Migration: If groupOrder exists, flatten the list
+                    if (parsed.groupOrder && parsed.groupOrder.length > 0) {
+                        const newProjects = [];
+                        parsed.groupOrder.forEach(g => {
+                            if (g !== '기본') {
+                                newProjects.push({ id: generateId(), type: 'separator', name: g });
+                            }
+                            const groupProjects = state.projects.filter(p => (p.group || '기본') === g);
+                            newProjects.push(...groupProjects);
+                        });
+                        const processedIds = new Set(newProjects.filter(p => p.type !== 'separator').map(p => p.id));
+                        const orphans = state.projects.filter(p => !processedIds.has(p.id));
+                        newProjects.push(...orphans);
+                        state.projects = newProjects;
+                    }
+                }
+            }
+        }
+
+        function saveState() {
+            // 1) 개인 UI 상태 → localStorage
+            localStorage.setItem('ganttLocalUI', JSON.stringify({
+                currentProjectId: state.currentProjectId,
+                filterCompleted: state.filterCompleted,
+                collapsedGroups: state.collapsedGroups
+            }));
+
+            // 2) 공유 데이터(projects) → Firebase 또는 localStorage
+            if (firebaseEnabled && _firebaseRef && !_syncingFromFirebase) {
+                setSyncStatus('saving');
+                _firebaseRef.set(state.projects).then(() => {
+                    setSyncStatus('synced');
+                }).catch((err) => {
+                    console.error('Firebase 저장 실패:', err);
+                    setSyncStatus('offline');
+                    // 실패 시 localStorage 백업
+                    localStorage.setItem('ganttManagerState', JSON.stringify({
+                        projects: state.projects
+                    }));
+                });
+            } else if (!firebaseEnabled) {
+                localStorage.setItem('ganttManagerState', JSON.stringify({
+                    projects: state.projects,
+                    currentProjectId: state.currentProjectId,
+                    filterCompleted: state.filterCompleted,
+                    collapsedGroups: state.collapsedGroups
+                }));
+            }
+        }
+ 
+        function handleSearch(query) {
+            state.searchQuery = query;
+            renderProjects();
+            if (state.currentProjectId) {
+                renderGantt();
+            }
+        }
+
+        // Project Functions
+        function renderProjects() {
+            const list = document.getElementById('projectList');
+            const lowerQuery = (state.searchQuery || '').trim().toLowerCase();
+
+            // flat 배열을 그룹별로 분류
+            const groups = []; // { separator: item|null, projects: [] }
+            let currentGroup = { separator: null, projects: [] };
+
+            state.projects.forEach(item => {
+                if (item.type === 'separator') {
+                    // 이전 그룹 저장
+                    groups.push(currentGroup);
+                    currentGroup = { separator: item, projects: [] };
+                } else {
+                    currentGroup.projects.push(item);
+                }
+            });
+            groups.push(currentGroup);
+
+            function renderProjectItem(item) {
+                const projectMatches = lowerQuery && (item.name || '').toLowerCase().includes(lowerQuery);
+                const taskMatches = lowerQuery && (item.tasks || []).some(t => (t.name || '').toLowerCase().includes(lowerQuery));
+                const searchClass = (projectMatches || taskMatches) ? 'search-highlight' : '';
+
+                return `
+                <div class="project-item ${item.id === state.currentProjectId ? 'active' : ''} ${searchClass}"
+                     style="${item.id === state.currentProjectId ? `border-left-color: ${item.color || '#e94560'}; background: linear-gradient(90deg, ${item.color}22, transparent);` : ''}"
+                     draggable="true"
+                     ondragstart="handleDragStart(event, 'project', '${item.id}')"
+                     ondragover="handleDragOver(event)"
+                     ondrop="handleSidebarDrop(event, '${item.id}')"
+                     ondragend="handleDragEndHTML5(event)"
+                     oncontextmenu="handleContextMenu(event, 'project', '${item.id}')"
+                     onclick="selectProject('${item.id}')"
+                     ondblclick="editProject('${item.id}')">
+                    <span class="project-item-name">${escapeHtml(item.name)}</span>
+                    <div class="project-item-actions">
+                        <button onclick="event.stopPropagation(); editProject('${item.id}')">✎</button>
+                    </div>
+                </div>`;
+            }
+
+            let html = '';
+            groups.forEach(group => {
+                if (group.separator === null) {
+                    // separator 없는 최상위 프로젝트 (기본 그룹)
+                    html += group.projects.map(renderProjectItem).join('');
+                } else {
+                    const sep = group.separator;
+                    const isCollapsed = state.collapsedGroups[sep.id];
+                    // 검색 시 매칭 프로젝트가 있으면 자동 펼치기
+                    const hasMatch = lowerQuery && group.projects.some(p =>
+                        (p.name || '').toLowerCase().includes(lowerQuery) ||
+                        (p.tasks || []).some(t => (t.name || '').toLowerCase().includes(lowerQuery))
+                    );
+                    const collapsed = lowerQuery ? (hasMatch ? false : isCollapsed) : isCollapsed;
+
+                    html += `
+                    <div class="sidebar-group ${collapsed ? 'collapsed' : ''}"
+                         ondragover="handleDragOver(event)"
+                         ondrop="handleSidebarDrop(event, '${sep.id}')">
+                        <div class="sidebar-group-header"
+                             draggable="true"
+                             ondragstart="handleDragStart(event, 'separator', '${sep.id}')"
+                             ondragend="handleDragEndHTML5(event)"
+                             oncontextmenu="handleContextMenu(event, 'separator', '${sep.id}')"
+                             onclick="toggleGroup('${sep.id}')">
+                            <span class="group-toggle">▼</span>
+                            <span class="group-name">${escapeHtml(sep.name)}</span>
+                            <span class="group-count">${group.projects.length}</span>
+                            <div class="group-actions">
+                                <button onclick="event.stopPropagation(); addProjectToGroup('${sep.id}')" title="프로젝트 추가">+</button>
+                                <button onclick="event.stopPropagation(); renameGroup('${sep.id}')" title="이름 변경">✎</button>
+                                <button onclick="event.stopPropagation(); deleteGroup('${sep.id}')" title="그룹 삭제">×</button>
+                            </div>
+                        </div>
+                        <div class="sidebar-group-children">
+                            ${group.projects.map(renderProjectItem).join('')}
+                        </div>
+                    </div>`;
+                }
+            });
+
+            list.innerHTML = html;
+
+            // Add context menu listener to the background
+            list.oncontextmenu = (e) => {
+                if (e.target === list) {
+                    handleContextMenu(e, 'background', null);
+                }
+            };
+        }
+ 
+        function selectProject(projectId) {
+            state.currentProjectId = projectId;
+            saveState();
+            renderProjects();
+            renderGantt();
+        }
+
+        function goToDashboard() {
+            state.currentProjectId = null;
+            saveState();
+            renderProjects();
+            renderGantt();
+        }
+
+        // Backup & Restore
+        function exportData() {
+            const dataStr = JSON.stringify(state, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gantt_backup_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerImport() {
+            document.getElementById('importFile').click();
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (!importedState.projects) throw new Error("Invalid format");
+                    
+                    if (confirm('현재 데이터를 덮어쓰고 가져온 데이터로 복원하시겠습니까?')) {
+                        state = importedState;
+                        saveState();
+                        renderProjects();
+                        renderGantt();
+                        alert('데이터가 성공적으로 복원되었습니다.');
+                    }
+                } catch (err) {
+                    alert('파일 형식이 올바르지 않습니다.');
+                }
+                input.value = ''; // Reset
+            };
+            reader.readAsText(file);
+        }
+ 
+        function exportToCSV() {
+            const project = getCurrentProject();
+            if (!project) {
+                alert('프로젝트를 선택하세요.');
+                return;
+            }
+
+            const headers = ['Task Name', 'Start Date', 'End Date', 'Progress', 'Memo', 'Dependencies'];
+            const rows = project.tasks.map(t => [
+                `"${t.name.replace(/"/g, '""')}"`,
+                t.startDate,
+                t.endDate,
+                `${t.progress}%`,
+                `"${(t.memo || '').replace(/"/g, '""')}"`,
+                `"${(t.dependencies || []).join(',')}"`
+            ]);
+
+            const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${project.name}_tasks.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function openProjectModal(projectId = null) {
+            state.editingProjectId = projectId;
+            const modal = document.getElementById('projectModal');
+            const title = document.getElementById('projectModalTitle');
+            const nameInput = document.getElementById('projectName');
+            const descInput = document.getElementById('projectDescription');
+            const groupInput = document.getElementById('projectGroup');
+            const deleteBtn = document.getElementById('deleteProjectBtn');
+            renderColorOptions('projectColorOptions');
+ 
+            if (projectId) {
+                const project = state.projects.find(p => p.id === projectId);
+                title.textContent = '프로젝트 수정';
+                nameInput.value = project.name;
+                descInput.value = project.description || '';
+                groupInput.parentElement.style.display = 'none'; // Hide group input
+                deleteBtn.style.display = 'block';
+                selectColor(project.color || COLORS[0], 'projectColorOptions');
+            } else {
+                title.textContent = '새 프로젝트';
+                nameInput.value = '';
+                descInput.value = '';
+                groupInput.parentElement.style.display = 'none'; // Hide group input
+                deleteBtn.style.display = 'none';
+                selectColor(COLORS[Math.floor(Math.random() * COLORS.length)], 'projectColorOptions');
+            }
+ 
+            modal.classList.remove('hidden');
+            nameInput.focus();
+        }
+ 
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+            state.editingProjectId = null;
+        }
+ 
+        function saveProject() {
+            const name = document.getElementById('projectName').value.trim();
+            const description = document.getElementById('projectDescription').value.trim();
+            const color = document.querySelector('#projectColorOptions .color-option.selected')?.dataset.color || COLORS[0];
+ 
+            if (!name) {
+                alert('프로젝트 이름을 입력하세요');
+                return;
+            }
+ 
+            if (state.editingProjectId) {
+                const project = state.projects.find(p => p.id === state.editingProjectId);
+                project.name = name;
+                project.description = description;
+                project.color = color;
+            } else {
+                const newProject = {
+                    id: generateId(),
+                    name,
+                    description,
+                    tasks: [],
+                    memos: [],
+                    createdAt: new Date().toISOString(),
+                    color: color
+                };
+                // 그룹 뒤에 삽입할지 확인
+                if (state._insertAfterGroup) {
+                    const groupIdx = state.projects.findIndex(p => p.id === state._insertAfterGroup);
+                    if (groupIdx !== -1) {
+                        // 해당 그룹의 마지막 프로젝트 뒤에 삽입
+                        let insertIdx = groupIdx + 1;
+                        while (insertIdx < state.projects.length && state.projects[insertIdx].type !== 'separator') {
+                            insertIdx++;
+                        }
+                        state.projects.splice(insertIdx, 0, newProject);
+                    } else {
+                        state.projects.push(newProject);
+                    }
+                    delete state._insertAfterGroup;
+                } else {
+                    state.projects.push(newProject);
+                }
+                state.currentProjectId = newProject.id;
+            }
+
+            saveState();
+            renderProjects();
+            renderGantt();
+            closeProjectModal();
+        }
+ 
+        function editProject(projectId) {
+            openProjectModal(projectId);
+        }
+ 
+        function deleteProject() {
+            if (!confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) return;
+ 
+            state.projects = state.projects.filter(p => p.id !== state.editingProjectId);
+            if (state.currentProjectId === state.editingProjectId) {
+                state.currentProjectId = state.projects.length > 0 ? state.projects[0].id : null;
+            }
+ 
+            saveState();
+            renderProjects();
+            renderGantt();
+            closeProjectModal();
+        }
+ 
+        function deleteProjectById(id) {
+            if (!confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) return;
+            state.projects = state.projects.filter(p => p.id !== id);
+            if (state.currentProjectId === id) {
+                state.currentProjectId = null;
+            }
+            saveState();
+            renderProjects();
+            renderGantt();
+        }
+
+        function enableInlineEdit(element, field) {
+            const project = getCurrentProject();
+            if (!project) return;
+
+            // Prevent multiple clicks
+            if (element.querySelector('input, textarea')) return;
+
+            const currentText = project[field] || '';
+            const input = document.createElement(field === 'description' ? 'textarea' : 'input');
+            input.value = currentText;
+            
+            // Style to match parent
+            input.style.width = '100%';
+            input.style.background = '#1a1a2e';
+            input.style.color = '#fff';
+            input.style.border = '1px solid #e94560';
+            input.style.borderRadius = '4px';
+            input.style.padding = '5px';
+            input.style.fontSize = 'inherit';
+            input.style.fontFamily = 'inherit';
+
+            if (field === 'description') {
+                input.style.resize = 'vertical';
+            }
+
+            input.onblur = () => {
+                const newValue = input.value.trim();
+                if (newValue !== currentText) {
+                    project[field] = newValue;
+                    saveState();
+                    renderProjects(); // Update sidebar if name changed
+                }
+                renderGantt(); // Restore text view
+            };
+
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter' && field !== 'description') {
+                    input.blur();
+                }
+            };
+
+            element.textContent = '';
+            element.appendChild(input);
+            input.focus();
+        }
+
+        function navigateToTask(projectId, taskId) {
+            state.currentProjectId = projectId;
+            state.highlightTaskId = taskId;
+            saveState();
+            renderProjects();
+            renderGantt();
+
+            // Scroll and Highlight
+            setTimeout(() => {
+                const element = document.getElementById(`task-bar-${taskId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                    setTimeout(() => { state.highlightTaskId = null; renderGantt(); }, 3000); // Remove highlight after 3s
+                }
+            }, 100);
+        }
+
+        // Task Functions
+        function openTaskModal(taskId = null) {
+            if (!state.currentProjectId) {
+                alert('먼저 프로젝트를 선택하세요');
+                return;
+            }
+ 
+            state.editingTaskId = taskId;
+            const modal = document.getElementById('taskModal');
+            const title = document.getElementById('taskModalTitle');
+            const deleteBtn = document.getElementById('deleteTaskBtn');
+            const depContainer = document.getElementById('taskDependencies');
+            renderColorOptions('taskColorOptions');
+ 
+            if (taskId) {
+                const project = getCurrentProject();
+                const task = project.tasks.find(t => t.id === taskId);
+                title.textContent = '태스크 수정';
+                document.getElementById('taskName').value = task.name;
+                document.getElementById('taskStartDate').value = task.startDate;
+                document.getElementById('taskEndDate').value = task.endDate;
+                document.getElementById('taskMemo').value = task.memo || '';
+                document.getElementById('taskCompleted').checked = task.progress === 100;
+                selectColor(task.color || COLORS[0], 'taskColorOptions');
+                deleteBtn.style.display = 'block';
+            } else {
+                title.textContent = '새 태스크';
+                document.getElementById('taskName').value = '';
+                document.getElementById('taskMemo').value = '';
+                setDefaultDates();
+                document.getElementById('taskCompleted').checked = false;
+                // Default color: Project color or Random
+                const project = getCurrentProject();
+                selectColor(project.color || COLORS[Math.floor(Math.random() * COLORS.length)], 'taskColorOptions');
+                deleteBtn.style.display = 'none';
+            }
+
+            // Populate Dependencies
+            const project = getCurrentProject();
+            const currentTask = taskId ? project.tasks.find(t => t.id === taskId) : null;
+            const currentDeps = currentTask ? (currentTask.dependencies || []) : [];
+            
+            depContainer.innerHTML = project.tasks
+                .filter(t => t.id !== taskId) // Exclude self
+                .map(t => `
+                    <div style="margin-bottom: 5px;">
+                        <input type="checkbox" id="dep_${t.id}" value="${t.id}" 
+                            ${currentDeps.includes(t.id) ? 'checked' : ''}>
+                        <label for="dep_${t.id}" style="display:inline; color:#eee;">${escapeHtml(t.name)}</label>
+                    </div>
+                `).join('');
+ 
+            modal.classList.remove('hidden');
+            document.getElementById('taskName').focus();
+        }
+ 
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.add('hidden');
+            state.editingTaskId = null;
+        }
+ 
+        function saveTask() {
+            const name = document.getElementById('taskName').value.trim();
+            const startDate = document.getElementById('taskStartDate').value;
+            const endDate = document.getElementById('taskEndDate').value;
+            const memo = document.getElementById('taskMemo').value.trim();
+            const color = document.querySelector('#taskColorOptions .color-option.selected')?.dataset.color || COLORS[0];
+            const isCompleted = document.getElementById('taskCompleted').checked;
+            
+            const dependencies = [];
+            document.querySelectorAll('#taskDependencies input:checked').forEach(cb => {
+                dependencies.push(cb.value);
+            });
+ 
+            if (!name) {
+                alert('태스크 이름을 입력하세요');
+                return;
+            }
+ 
+            if (!startDate || !endDate) {
+                alert('시작일과 종료일을 입력하세요');
+                return;
+            }
+ 
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('종료일은 시작일보다 늦어야 합니다');
+                return;
+            }
+ 
+            const project = getCurrentProject();
+ 
+            if (state.editingTaskId) {
+                const task = project.tasks.find(t => t.id === state.editingTaskId);
+                task.name = name;
+                task.startDate = startDate;
+                task.endDate = endDate;
+                task.memo = memo;
+                task.progress = isCompleted ? 100 : 0;
+                task.color = color;
+                task.dependencies = dependencies;
+            } else {
+                project.tasks.push({
+                    id: generateId(),
+                    name,
+                    startDate,
+                    endDate,
+                    progress: isCompleted ? 100 : 0,
+                    memo,
+                    color,
+                    dependencies,
+                    createdAt: new Date().toISOString()
+                });
+            }
+ 
+            saveState();
+            renderGantt();
+            closeTaskModal();
+        }
+ 
+        function deleteTask() {
+            if (!confirm('정말로 이 태스크를 삭제하시겠습니까?')) return;
+ 
+            const project = getCurrentProject();
+            project.tasks = project.tasks.filter(t => t.id !== state.editingTaskId);
+ 
+            saveState();
+            renderGantt();
+            closeTaskModal();
+        }
+ 
+        // Context Menu Functions
+        function handleContextMenu(e, type, id) {
+            e.preventDefault();
+            e.stopPropagation();
+            state.contextMenuTarget = { type, id };
+            
+            const menu = document.getElementById('contextMenu');
+            const dupBtn = document.getElementById('ctxMenuDuplicate');
+            const completeBtn = document.getElementById('ctxMenuComplete');
+            const newProjBtn = document.getElementById('ctxMenuNewProject');
+            const newSepBtn = document.getElementById('ctxMenuNewSeparator');
+            const renameSepBtn = document.getElementById('ctxMenuRenameSeparator');
+            const deleteSepBtn = document.getElementById('ctxMenuDeleteSeparator');
+            const editBtn = menu.querySelector('div[onclick="handleMenuAction(\'edit\')"]');
+            const deleteBtn = menu.querySelector('div[onclick="handleMenuAction(\'delete\')"]');
+            
+            // Reset all
+            [dupBtn, completeBtn, newProjBtn, newSepBtn, renameSepBtn, deleteSepBtn, editBtn, deleteBtn].forEach(el => el.style.display = 'none');
+
+            if (type === 'task') {
+                // 완료 상태에 따라 라벨 변경
+                const project = getCurrentProject();
+                const task = project && project.tasks ? project.tasks.find(t => t.id === id) : null;
+                if (task && task.progress === 100) {
+                    completeBtn.innerHTML = '🔄 재개';
+                } else {
+                    completeBtn.innerHTML = '✅ 완료';
+                }
+                [completeBtn, editBtn].forEach(el => el.style.display = 'flex');
+            } else if (type === 'project') {
+                [editBtn, deleteBtn].forEach(el => el.style.display = 'flex');
+            } else if (type === 'background') {
+                [newProjBtn, newSepBtn].forEach(el => el.style.display = 'flex');
+            } else if (type === 'separator') {
+                [newProjBtn, renameSepBtn, deleteSepBtn].forEach(el => el.style.display = 'flex');
+            }
+
+            menu.style.display = 'block';
+            menu.style.left = `${e.pageX}px`;
+            menu.style.top = `${e.pageY}px`;
+        }
+
+        function hideContextMenu() {
+            document.getElementById('contextMenu').style.display = 'none';
+        }
+
+        function handleMenuAction(action) {
+            const target = state.contextMenuTarget;
+            if (!target) return;
+
+            if (action === 'newProject') {
+                openProjectModal();
+            }
+            if (action === 'newSeparator') {
+                const name = prompt('새 구분선 이름을 입력하세요:');
+                if (name) {
+                    state.projects.push({ id: generateId(), type: 'separator', name });
+                    saveState();
+                    renderProjects();
+                }
+            }
+            if (target.type === 'separator') {
+                if (action === 'renameSeparator') {
+                    const sep = state.projects.find(p => p.id === target.id);
+                    const newName = prompt('구분선 이름을 변경하세요:', sep.name);
+                    if (newName) {
+                        sep.name = newName;
+                        saveState();
+                        renderProjects();
+                    }
+                }
+                if (action === 'deleteSeparator') {
+                    if (confirm('이 구분선을 삭제하시겠습니까?')) {
+                        state.projects = state.projects.filter(p => p.id !== target.id);
+                        saveState();
+                        renderProjects();
+                    }
+                }
+            }
+
+            if (target.type === 'task') {
+                if (action === 'toggleComplete') {
+                    const project = getCurrentProject();
+                    const task = project.tasks.find(t => t.id === target.id);
+                    if (task) {
+                        task.progress = task.progress === 100 ? 0 : 100;
+                        saveState();
+                        renderGantt();
+                    }
+                }
+                if (action === 'edit') openTaskModal(target.id);
+                if (action === 'duplicate') {
+                    const project = getCurrentProject();
+                    const task = project.tasks.find(t => t.id === target.id);
+                    if (task) {
+                        const newTask = { ...task, id: generateId(), name: `${task.name} (복사본)`, createdAt: new Date().toISOString() };
+                        project.tasks.push(newTask);
+                        saveState();
+                        renderGantt();
+                    }
+                }
+                if (action === 'delete') {
+                    state.editingTaskId = target.id;
+                    deleteTask();
+                }
+            } else if (target.type === 'project') {
+                if (action === 'edit') openProjectModal(target.id);
+                if (action === 'delete') deleteProjectById(target.id);
+            }
+            hideContextMenu();
+        }
+
+        // Tree Group Functions
+        function toggleGroup(groupId) {
+            state.collapsedGroups[groupId] = !state.collapsedGroups[groupId];
+            saveState();
+            renderProjects();
+        }
+
+        function addGroup() {
+            const name = prompt('새 그룹 이름을 입력하세요:');
+            if (name && name.trim()) {
+                state.projects.push({ id: generateId(), type: 'separator', name: name.trim() });
+                saveState();
+                renderProjects();
+            }
+        }
+
+        function addProjectToGroup(groupId) {
+            // 그룹 바로 뒤에 프로젝트가 추가되도록 state에 insertIndex 저장
+            state._insertAfterGroup = groupId;
+            openProjectModal();
+        }
+
+        function renameGroup(groupId) {
+            const sep = state.projects.find(p => p.id === groupId);
+            if (!sep) return;
+            const newName = prompt('그룹 이름을 변경하세요:', sep.name);
+            if (newName && newName.trim()) {
+                sep.name = newName.trim();
+                saveState();
+                renderProjects();
+            }
+        }
+
+        function deleteGroup(groupId) {
+            if (!confirm('이 그룹을 삭제하시겠습니까? (프로젝트는 유지됩니다)')) return;
+            state.projects = state.projects.filter(p => p.id !== groupId);
+            saveState();
+            renderProjects();
+        }
+
+        // Memo Functions
+        function toggleMemo() {
+            const panel = document.getElementById('memoPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                renderMemos();
+            }
+        }
+ 
+        function renderMemos() {
+            const project = getCurrentProject();
+            if (!project) return;
+ 
+            const list = document.getElementById('memoList');
+            const memos = project.memos || [];
+ 
+            if (memos.length === 0) {
+                list.innerHTML = '<p style="color: #666; text-align: center;">메모가 없습니다</p>';
+                return;
+            }
+ 
+            list.innerHTML = memos.map(memo => `
+                <div class="memo-item">
+                    <div class="memo-item-header">
+                        <span>${formatDate(memo.createdAt)}</span>
+                    </div>
+                    <div class="memo-item-content">${escapeHtml(memo.content)}</div>
+                    <div class="memo-item-actions">
+                        <button onclick="editMemo('${memo.id}')">수정</button>
+                        <button onclick="deleteMemoItem('${memo.id}')">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+ 
+        function openMemoModal(memoId = null) {
+            state.editingMemoId = memoId;
+            const modal = document.getElementById('memoModal');
+            const title = document.getElementById('memoModalTitle');
+            const deleteBtn = document.getElementById('deleteMemoBtn');
+            const contentInput = document.getElementById('memoContent');
+ 
+            if (memoId) {
+                const project = getCurrentProject();
+                const memo = project.memos.find(m => m.id === memoId);
+                title.textContent = '메모 수정';
+                contentInput.value = memo.content;
+                deleteBtn.style.display = 'block';
+            } else {
+                title.textContent = '새 메모';
+                contentInput.value = '';
+                deleteBtn.style.display = 'none';
+            }
+ 
+            modal.classList.remove('hidden');
+            contentInput.focus();
+        }
+ 
+        function closeMemoModal() {
+            document.getElementById('memoModal').classList.add('hidden');
+            state.editingMemoId = null;
+        }
+ 
+        function saveMemo() {
+            const content = document.getElementById('memoContent').value.trim();
+ 
+            if (!content) {
+                alert('메모 내용을 입력하세요');
+                return;
+            }
+ 
+            const project = getCurrentProject();
+            if (!project.memos) project.memos = [];
+ 
+            if (state.editingMemoId) {
+                const memo = project.memos.find(m => m.id === state.editingMemoId);
+                memo.content = content;
+                memo.updatedAt = new Date().toISOString();
+            } else {
+                project.memos.unshift({
+                    id: generateId(),
+                    content,
+                    createdAt: new Date().toISOString()
+                });
+            }
+ 
+            saveState();
+            renderMemos();
+            closeMemoModal();
+        }
+ 
+        function editMemo(memoId) {
+            openMemoModal(memoId);
+        }
+ 
+        function deleteMemo() {
+            if (!confirm('정말로 이 메모를 삭제하시겠습니까?')) return;
+            deleteMemoItem(state.editingMemoId);
+            closeMemoModal();
+        }
+ 
+        function deleteMemoItem(memoId) {
+            const project = getCurrentProject();
+            project.memos = project.memos.filter(m => m.id !== memoId);
+            saveState();
+            renderMemos();
+        }
+ 
+        // Gantt Chart Rendering
+        function renderGantt() {
+            const project = getCurrentProject();
+            const container = document.getElementById('ganttContainer');
+            const emptyState = document.getElementById('emptyState');
+            const headerActions = document.getElementById('headerActions');
+            const projectName = document.getElementById('currentProjectName');
+            const projectDescription = document.getElementById('currentProjectDescription');
+            const searchInput = document.getElementById('searchInput');
+            const dashboardGrid = document.getElementById('dashboardGrid');
+ 
+            if (!project || project.type === 'separator') {
+                container.style.display = 'none';
+                emptyState.style.display = 'none';
+                renderDashboard();
+                headerActions.style.display = 'none';
+                projectName.textContent = '프로젝트 대시보드';
+                if (state.searchQuery) {
+                    state.searchQuery = '';
+                    searchInput.value = '';
+                }
+                if (projectDescription) projectDescription.style.display = 'none';
+                return;
+            }
+ 
+            dashboardGrid.style.display = 'none';
+            projectName.textContent = project.name;
+            if (projectDescription) {
+                projectDescription.textContent = project.description || '';
+                projectDescription.style.display = project.description ? 'block' : 'none';
+            }
+            headerActions.style.display = 'flex';
+ 
+            if (project.tasks.length === 0) {
+                container.style.display = 'none';
+                emptyState.innerHTML = `
+                    <div class="empty-state-icon">📋</div>
+                    <h3>태스크가 없습니다</h3>
+                    <p>새 태스크를 추가하여 프로젝트 일정을 관리하세요</p>
+                `;
+                emptyState.style.display = 'flex';
+                return;
+            }
+ 
+            emptyState.style.display = 'none';
+            container.style.display = 'block';
+ 
+            const lowerQuery = (state.searchQuery || '').trim().toLowerCase();
+            const { startDate, endDate, days } = calculateDateRange(project.tasks);
+            const dayWidth = state.dayWidth * (state.zoom / 100);
+ 
+            // Render Header
+            let headerHtml = `
+                <div class="gantt-header">
+                    <div class="gantt-task-header">태스크</div>
+                    <div class="gantt-timeline-header">
+            `;
+ 
+            days.forEach(day => {
+                const date = new Date(day);
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const isToday = isSameDay(date, new Date());
+                headerHtml += `
+                    <div class="gantt-day ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}"
+                         style="width: ${dayWidth}px; min-width: ${dayWidth}px;">
+                        ${formatShortDate(day)}
+                    </div>
+                `;
+            });
+ 
+            headerHtml += '</div></div>';
+ 
+            // Render Body
+            let bodyHtml = `
+                <div class="gantt-body" id="ganttBody">
+                    <svg class="gantt-dependency-svg" id="dependencySvg">
+                    </svg>
+            `;
+ 
+            project.tasks.forEach(task => {
+                const taskStart = new Date(task.startDate);
+                const taskEnd = new Date(task.endDate);
+                const startOffset = Math.floor((taskStart - startDate) / (1000 * 60 * 60 * 24));
+                const duration = Math.floor((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1;
+                const left = startOffset * dayWidth;
+                const width = duration * dayWidth - 4;
+
+                const isHighlighted = state.highlightTaskId === task.id;
+                const highlightClass = isHighlighted ? 'highlight-task' : '';
+                const isCompleted = task.progress === 100;
+                const completedClass = isCompleted ? 'completed' : '';
+                const searchHighlightClass = (lowerQuery && task.name.toLowerCase().includes(lowerQuery)) ? 'search-highlight' : '';
+ 
+                bodyHtml += `
+                    <div class="gantt-row"
+                         ondragover="handleDragOver(event)"
+                         ondrop="handleTaskDrop(event, '${task.id}')">
+                        <div class="gantt-task-cell ${completedClass} ${searchHighlightClass}"
+                             draggable="true"
+                             ondragstart="handleDragStart(event, 'task', '${task.id}')"
+                             ondragend="handleDragEndHTML5(event)"
+                             oncontextmenu="handleContextMenu(event, 'task', '${task.id}')"
+                             style="cursor: grab;">
+                            <div class="task-color" style="background: ${task.color}"></div>
+                            <span class="task-name" onclick="openTaskModal('${task.id}')">${escapeHtml(task.name)}</span>
+                        </div>
+                        <div class="gantt-timeline-cell">
+                `;
+ 
+                days.forEach(day => {
+                    const date = new Date(day);
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    bodyHtml += `<div class="gantt-cell-day ${isWeekend ? 'weekend' : ''}" style="width: ${dayWidth}px; min-width: ${dayWidth}px;"></div>`;
+                });
+ 
+                bodyHtml += `
+                            <div class="gantt-bar ${highlightClass} ${completedClass} ${searchHighlightClass}"
+                                 id="task-bar-${task.id}"
+                                 style="left: ${left}px; width: ${width}px; background: ${task.color};"
+                                 onmousedown="startDrag(event, '${task.id}')"
+                                 oncontextmenu="handleContextMenu(event, 'task', '${task.id}')"
+                                 title="${escapeHtml(task.name)}">
+                                <div class="dep-dot dep-dot-left" data-task-id="${task.id}" data-side="left"
+                                     onmousedown="event.stopPropagation(); startDepDrag(event, '${task.id}', 'left')"></div>
+                                <span class="gantt-bar-text">${escapeHtml(task.name)}</span>
+                                <div class="dep-dot dep-dot-right" data-task-id="${task.id}" data-side="right"
+                                     onmousedown="event.stopPropagation(); startDepDrag(event, '${task.id}', 'right')"></div>
+                                <div class="gantt-bar-handle"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+ 
+            // Add Task Button Row
+            bodyHtml += `
+                <div class="gantt-row" onclick="openTaskModal()" style="cursor: pointer;">
+                    <div class="gantt-task-cell" style="justify-content: center; color: #aaa; border-bottom: none;">+ 태스크 추가</div>
+                    <div class="gantt-timeline-cell" style="border-bottom: none;"></div>
+                </div>
+            `;
+
+            bodyHtml += '</div>';
+ 
+            container.innerHTML = headerHtml + bodyHtml;
+            
+            // Draw dependencies after render
+            setTimeout(drawDependencies, 0);
+        }
+
+        function drawDependencies() {
+            const project = getCurrentProject();
+            if (!project) return;
+
+            const svg = document.getElementById('dependencySvg');
+            const container = document.getElementById('ganttBody');
+            if (!svg || !container) return;
+
+            svg.innerHTML = '';
+
+            const containerRect = container.getBoundingClientRect();
+
+            // 화살표 마커 정의
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '8');
+            marker.setAttribute('markerHeight', '6');
+            marker.setAttribute('refX', '8');
+            marker.setAttribute('refY', '3');
+            marker.setAttribute('orient', 'auto');
+            const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            arrowPath.setAttribute('points', '0 0, 8 3, 0 6');
+            arrowPath.setAttribute('fill', '#e94560');
+            marker.appendChild(arrowPath);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+
+            project.tasks.forEach(task => {
+                if (task.dependencies && task.dependencies.length > 0) {
+                    const targetBar = document.getElementById(`task-bar-${task.id}`);
+                    if (!targetBar) return;
+                    const targetRect = targetBar.getBoundingClientRect();
+
+                    const targetX = targetRect.left - containerRect.left;
+                    const targetY = targetRect.top - containerRect.top + (targetRect.height / 2);
+
+                    task.dependencies.forEach(depId => {
+                        const sourceBar = document.getElementById(`task-bar-${depId}`);
+                        if (!sourceBar) return;
+                        const sourceRect = sourceBar.getBoundingClientRect();
+                        const sourceX = sourceRect.right - containerRect.left;
+                        const sourceY = sourceRect.top - containerRect.top + (sourceRect.height / 2);
+
+                        // 베지어 곡선 연결선
+                        const midX = sourceX + (targetX - sourceX) / 2;
+                        const d = `M ${sourceX} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', d);
+                        path.setAttribute('class', 'dependency-line');
+                        path.setAttribute('marker-end', 'url(#arrowhead)');
+                        svg.appendChild(path);
+
+                        // 연결점 원 (소스 오른쪽)
+                        const srcCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        srcCircle.setAttribute('cx', sourceX);
+                        srcCircle.setAttribute('cy', sourceY);
+                        srcCircle.setAttribute('r', '4');
+                        srcCircle.setAttribute('fill', '#e94560');
+                        svg.appendChild(srcCircle);
+
+                        // 연결점 원 (타겟 왼쪽)
+                        const tgtCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        tgtCircle.setAttribute('cx', targetX);
+                        tgtCircle.setAttribute('cy', targetY);
+                        tgtCircle.setAttribute('r', '4');
+                        tgtCircle.setAttribute('fill', '#e94560');
+                        svg.appendChild(tgtCircle);
+                    });
+                }
+            });
+        }
+
+        // ========== 연결점 드래그로 선행 태스크 연결 ==========
+        let depDragState = null;
+
+        function startDepDrag(e, taskId, side) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const bar = document.getElementById(`task-bar-${taskId}`);
+            const container = document.getElementById('ganttBody');
+            if (!bar || !container) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const barRect = bar.getBoundingClientRect();
+
+            const startX = side === 'right'
+                ? barRect.right - containerRect.left
+                : barRect.left - containerRect.left;
+            const startY = barRect.top - containerRect.top + barRect.height / 2;
+
+            // 드래그 중인 dot에 active 클래스
+            const dot = bar.querySelector(`.dep-dot-${side}`);
+            if (dot) dot.classList.add('active');
+
+            depDragState = { taskId, side, startX, startY, containerRect, dot };
+
+            // SVG에 임시 드래그 라인 추가
+            const svg = document.getElementById('dependencySvg');
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('id', 'depDragLine');
+            line.setAttribute('x1', startX);
+            line.setAttribute('y1', startY);
+            line.setAttribute('x2', startX);
+            line.setAttribute('y2', startY);
+            line.setAttribute('class', 'dep-drag-line');
+            svg.appendChild(line);
+
+            document.addEventListener('mousemove', onDepDragMove);
+            document.addEventListener('mouseup', onDepDragEnd);
+        }
+
+        function onDepDragMove(e) {
+            if (!depDragState) return;
+            const line = document.getElementById('depDragLine');
+            if (!line) return;
+
+            const x = e.clientX - depDragState.containerRect.left;
+            const y = e.clientY - depDragState.containerRect.top;
+            line.setAttribute('x2', x);
+            line.setAttribute('y2', y);
+
+            // 호버 중인 dot 강조
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            document.querySelectorAll('.dep-dot.drop-target').forEach(d => d.classList.remove('drop-target'));
+            if (el && el.classList.contains('dep-dot') && el.dataset.taskId !== depDragState.taskId) {
+                el.classList.add('active');
+            }
+        }
+
+        function onDepDragEnd(e) {
+            document.removeEventListener('mousemove', onDepDragMove);
+            document.removeEventListener('mouseup', onDepDragEnd);
+
+            // 임시 라인 제거
+            const line = document.getElementById('depDragLine');
+            if (line) line.remove();
+
+            if (depDragState && depDragState.dot) {
+                depDragState.dot.classList.remove('active');
+            }
+            document.querySelectorAll('.dep-dot.active').forEach(d => d.classList.remove('active'));
+
+            if (!depDragState) return;
+
+            // 드롭 대상 찾기
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            if (el && el.classList.contains('dep-dot')) {
+                const targetTaskId = el.dataset.taskId;
+                const targetSide = el.dataset.side;
+
+                if (targetTaskId && targetTaskId !== depDragState.taskId) {
+                    // 연결 방향: 소스의 right -> 타겟의 left = 소스가 선행
+                    // 소스의 left -> 타겟의 right = 타겟이 선행
+                    let fromId, toId;
+                    if (depDragState.side === 'right' && targetSide === 'left') {
+                        fromId = depDragState.taskId; // 선행
+                        toId = targetTaskId;           // 후행
+                    } else if (depDragState.side === 'left' && targetSide === 'right') {
+                        fromId = targetTaskId;         // 선행
+                        toId = depDragState.taskId;    // 후행
+                    } else {
+                        // right->right 또는 left->left도 허용 (가까운 쪽 기준)
+                        fromId = depDragState.taskId;
+                        toId = targetTaskId;
+                    }
+
+                    const project = getCurrentProject();
+                    if (project) {
+                        const toTask = project.tasks.find(t => t.id === toId);
+                        if (toTask) {
+                            if (!toTask.dependencies) toTask.dependencies = [];
+                            if (toTask.dependencies.includes(fromId)) {
+                                // 이미 연결되어 있으면 해제
+                                toTask.dependencies = toTask.dependencies.filter(d => d !== fromId);
+                            } else {
+                                // 순환 의존성 방지
+                                if (!hasCyclicDep(project, fromId, toId)) {
+                                    toTask.dependencies.push(fromId);
+                                }
+                            }
+                            saveState();
+                            renderGantt();
+                        }
+                    }
+                }
+            }
+
+            depDragState = null;
+        }
+
+        function hasCyclicDep(project, fromId, toId) {
+            // toId에 fromId를 추가했을 때 순환이 생기는지 확인
+            const visited = new Set();
+            function dfs(id) {
+                if (id === toId) return true;
+                if (visited.has(id)) return false;
+                visited.add(id);
+                const task = project.tasks.find(t => t.id === id);
+                if (!task || !task.dependencies) return false;
+                return task.dependencies.some(depId => dfs(depId));
+            }
+            return dfs(fromId);
+        }
+ 
+        function renderDashboard() {
+            const grid = document.getElementById('dashboardGrid');
+            grid.style.display = 'block';
+            
+            // 1. Statistics (전체 통계)
+            const realProjects = state.projects.filter(p => p.type !== 'separator');
+            const totalProjects = realProjects.length;
+            const allTasks = realProjects.flatMap(p => p.tasks);
+            const totalTasks = allTasks.length;
+            const completedTasks = allTasks.filter(t => t.progress === 100).length;
+            const globalProgress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
+            let html = '';
+
+            // 1. Global Gantt (전체 프로젝트 일정 - 달력 형태) - 맨 위
+            let allProjectTasks = realProjects.flatMap(p => p.tasks);
+            if (allProjectTasks.length > 0) {
+                const { startDate, endDate, days } = calculateDateRange(allProjectTasks);
+                const dayWidth = state.dayWidth * (state.zoom / 100);
+
+                html += `
+                    <div style="background: #16213e; border: 1px solid #0f3460; border-radius: 12px; padding: 20px; margin-bottom: 30px; overflow: hidden;">
+                        <h3 style="margin-bottom: 20px; color: #fff; font-size: 1.1rem;">전체 프로젝트 일정</h3>
+                        <div style="overflow-x: auto; border: 1px solid #0f3460; border-radius: 6px;">
+                            <div style="min-width: 100%;">
+                                <!-- Header -->
+                                <div style="display: flex; background: #1a1a2e; border-bottom: 1px solid #0f3460; position: sticky; left: 0;">
+                                    <div style="min-width: 150px; padding: 10px; border-right: 1px solid #0f3460; color: #aaa; font-size: 0.9rem; position: sticky; left: 0; background: #1a1a2e; z-index: 2;">프로젝트</div>
+                                    <div style="display: flex;">`;
+
+                days.forEach(day => {
+                    const date = new Date(day);
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    const isToday = isSameDay(date, new Date());
+                    html += `
+                        <div style="width: ${dayWidth}px; min-width: ${dayWidth}px; text-align: center; padding: 8px 0; font-size: 0.75rem; color: #aaa; border-right: 1px solid #0f3460; ${isWeekend ? 'background: rgba(233, 69, 96, 0.1);' : ''} ${isToday ? 'background: rgba(233, 69, 96, 0.3); color: #e94560; font-weight: bold;' : ''}">
+                            ${formatShortDate(day)}
+                        </div>`;
+                });
+
+                html += `       </div></div>
+                                <!-- Body -->
+                                <div style="position: relative;">`;
+
+                realProjects.forEach(p => {
+                    if (p.tasks.length === 0) return;
+
+                    html += `
+                        <div style="display: flex; border-bottom: 1px solid #0f3460; height: 40px; position: relative;">
+                            <div style="min-width: 150px; padding: 0 10px; border-right: 1px solid #0f3460; display: flex; align-items: center; font-size: 0.9rem; color: #eee; position: sticky; left: 0; background: #16213e; z-index: 2; cursor: pointer;" onclick="selectProject('${p.id}')">
+                                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.name)}</div>
+                            </div>
+                            <div style="display: flex; position: relative; flex: 1;">`;
+
+                    days.forEach(day => {
+                        const date = new Date(day);
+                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                        html += `<div style="width: ${dayWidth}px; min-width: ${dayWidth}px; border-right: 1px solid #0f3460; height: 100%; ${isWeekend ? 'background: rgba(233, 69, 96, 0.05);' : ''}"></div>`;
+                    });
+
+                    p.tasks.forEach(t => {
+                        const s = new Date(t.startDate);
+                        const e = new Date(t.endDate);
+                        const startOffset = Math.floor((s - startDate) / (1000 * 60 * 60 * 24));
+                        const duration = Math.floor((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                        const left = startOffset * dayWidth;
+                        const width = duration * dayWidth - 4;
+
+                        html += `
+                            <div style="position: absolute; left: ${left}px; width: ${width}px; top: 8px; height: 24px; background: ${t.color}; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 0.75rem; color: white; cursor: pointer; white-space: nowrap; overflow: hidden; opacity: 0.9; box-shadow: 0 0 2px rgba(0,0,0,0.5);"
+                                 title="${t.name}: ${t.startDate} ~ ${t.endDate} (${t.progress}%)"
+                                 onclick="navigateToTask('${p.id}', '${t.id}')">
+                                ${escapeHtml(t.name)}
+                            </div>`;
+                    });
+
+                    html += `
+                            </div>
+                        </div>`;
+                });
+
+                html += `       </div></div></div></div>`;
+            }
+
+            // 2. Statistics (전체 통계)
+            html += `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div style="background: #16213e; padding: 20px; border-radius: 12px; border: 1px solid #0f3460;">
+                        <h3 style="color: #aaa; font-size: 0.9rem; margin-bottom: 5px;">전체 프로젝트</h3>
+                        <div style="font-size: 2rem; font-weight: bold; color: #fff;">${totalProjects}</div>
+                    </div>
+                    <div style="background: #16213e; padding: 20px; border-radius: 12px; border: 1px solid #0f3460;">
+                        <h3 style="color: #aaa; font-size: 0.9rem; margin-bottom: 5px;">전체 태스크</h3>
+                        <div style="font-size: 2rem; font-weight: bold; color: #fff;">${totalTasks}</div>
+                    </div>
+                    <div style="background: #16213e; padding: 20px; border-radius: 12px; border: 1px solid #0f3460;">
+                        <h3 style="color: #aaa; font-size: 0.9rem; margin-bottom: 5px;">총 진행률</h3>
+                        <div style="font-size: 2rem; font-weight: bold; color: ${globalProgress === 100 ? '#1dd1a1' : '#e94560'};">${globalProgress}%</div>
+                    </div>
+                </div>
+            `;
+
+            // 3. Imminent Tasks (마감 임박)
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const urgentTasks = [];
+
+            realProjects.forEach(p => {
+                p.tasks.forEach(t => {
+                    if (t.progress < 100) {
+                        const end = new Date(t.endDate);
+                        end.setHours(0,0,0,0);
+                        const diffTime = end - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        // Overdue or within 7 days
+                        if (diffDays <= 7) {
+                            urgentTasks.push({
+                                projectId: p.id,
+                                projectName: p.name,
+                                task: t,
+                                diffDays: diffDays
+                            });
+                        }
+                    }
+                });
+            });
+
+            urgentTasks.sort((a, b) => a.diffDays - b.diffDays);
+
+            if (urgentTasks.length > 0) {
+                html += `
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 15px;">🔥 마감 임박 / 지연된 태스크</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                `;
+                
+                urgentTasks.forEach(item => {
+                    let dDayStr = '';
+                    let dDayClass = '';
+                    if (item.diffDays < 0) {
+                        dDayStr = `D+${Math.abs(item.diffDays)}`;
+                        dDayClass = 'color: #ff4757; font-weight: bold;';
+                    } else if (item.diffDays === 0) {
+                        dDayStr = 'D-Day';
+                        dDayClass = 'color: #ff4757; font-weight: bold;';
+                    } else {
+                        dDayStr = `D-${item.diffDays}`;
+                        dDayClass = 'color: #feca57; font-weight: bold;';
+                    }
+
+                    html += `
+                        <div style="background: #1a1a2e; border: 1px solid #0f3460; border-radius: 8px; padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="selectProject('${item.projectId}')">
+                            <div style="width: 4px; height: 40px; background: ${item.task.color}; border-radius: 2px;"></div>
+                            <div style="flex: 1; overflow: hidden;">
+                                <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 2px;">${escapeHtml(item.projectName)}</div>
+                                <div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.task.name)}</div>
+                                <div style="font-size: 0.8rem; color: #666;">~ ${item.task.endDate}</div>
+                            </div>
+                            <div style="${dDayClass} font-size: 1.1rem;">${dDayStr}</div>
+                        </div>
+                    `;
+                });
+                html += `</div></div>`;
+            }
+
+            // 4. All Tasks List (전체 태스크 목록)
+            const allTasksFlat = realProjects.flatMap(p => p.tasks.map(t => ({...t, projectName: p.name, projectId: p.id})));
+            // Sort by start date
+            allTasksFlat.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #fff; font-size: 1.1rem; margin: 0;">전체 태스크 목록</h3>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: #aaa;">
+                        <input type="checkbox" ${state.filterCompleted ? 'checked' : ''} onchange="toggleDashboardFilter(this.checked)">
+                        완료된 태스크 숨기기
+                    </label>
+                </div>
+            `;
+            html += `<div style="background: #16213e; border: 1px solid #0f3460; border-radius: 12px; overflow: hidden;">
+                <table style="width: 100%; border-collapse: collapse; color: #eee; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #1a1a2e; border-bottom: 1px solid #0f3460;">
+                            <th style="padding: 12px; text-align: left;">프로젝트</th>
+                            <th style="padding: 12px; text-align: left;">태스크</th>
+                            <th style="padding: 12px; text-align: center;">기간</th>
+                            <th style="padding: 12px; text-align: center;">진행률</th>
+                            <th style="padding: 12px; text-align: center;">상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            if (allTasksFlat.length === 0) {
+                html += `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #666;">등록된 태스크가 없습니다.</td></tr>`;
+            } else {
+                allTasksFlat.forEach(t => {
+                    if (state.filterCompleted && t.progress === 100) return;
+
+                    const isDone = t.progress === 100;
+                    const isOverdue = !isDone && new Date(t.endDate) < new Date();
+                    const status = isDone ? '<span style="color: #1dd1a1;">완료</span>' : 
+                                   isOverdue ? '<span style="color: #ff4757;">D-day</span>' : 
+                                   '<span style="color: #feca57;">진행중</span>';
+
+                    html += `
+                        <tr style="border-bottom: 1px solid #0f3460; cursor: pointer;" onclick="navigateToTask('${t.projectId}', '${t.id}')" onmouseover="this.style.background='#1a1a2e'" onmouseout="this.style.background='transparent'">
+                            <td style="padding: 12px;">${escapeHtml(t.projectName)}</td>
+                            <td style="padding: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 10px; height: 10px; border-radius: 2px; background: ${t.color};"></div>
+                                    ${escapeHtml(t.name)}
+                                </div>
+                            </td>
+                            <td style="padding: 12px; text-align: center;">${t.startDate} ~ ${t.endDate}</td>
+                            <td style="padding: 12px; text-align: center;">${t.progress}%</td>
+                            <td style="padding: 12px; text-align: center;">${status}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            html += `</tbody></table></div>`;
+            
+            grid.innerHTML = html;
+        }
+
+        function toggleDashboardFilter(checked) {
+            state.filterCompleted = checked;
+            saveState();
+            renderDashboard();
+        }
+
+        function calculateDateRange(tasks) {
+            if (tasks.length === 0) {
+                const today = new Date();
+                return {
+                    startDate: today,
+                    endDate: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
+                    days: generateDays(today, 30)
+                };
+            }
+ 
+            let minDate = new Date(tasks[0].startDate);
+            let maxDate = new Date(tasks[0].endDate);
+ 
+            tasks.forEach(task => {
+                const start = new Date(task.startDate);
+                const end = new Date(task.endDate);
+                if (start < minDate) minDate = start;
+                if (end > maxDate) maxDate = end;
+            });
+ 
+            // Add padding
+            minDate.setDate(minDate.getDate() - 3);
+            maxDate.setDate(maxDate.getDate() + 7);
+ 
+            const days = generateDays(minDate, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)));
+ 
+            return { startDate: minDate, endDate: maxDate, days };
+        }
+ 
+        function generateDays(startDate, count) {
+            const days = [];
+            const current = new Date(startDate);
+            for (let i = 0; i < count; i++) {
+                days.push(current.toISOString().split('T')[0]);
+                current.setDate(current.getDate() + 1);
+            }
+            return days;
+        }
+ 
+        // Zoom Functions
+        function zoomIn() {
+            if (state.zoom < 200) {
+                state.zoom += 20;
+                document.getElementById('zoomLevel').textContent = state.zoom + '%';
+                renderGantt();
+            }
+        }
+ 
+        function zoomOut() {
+            if (state.zoom > 40) {
+                state.zoom -= 20;
+                document.getElementById('zoomLevel').textContent = state.zoom + '%';
+                renderGantt();
+            }
+        }
+ 
+        // Utility Functions
+        function getCurrentProject() {
+            return state.projects.find(p => p.id === state.currentProjectId);
+        }
+ 
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+ 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+ 
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+ 
+        function formatShortDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+ 
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
+ 
+        function setDefaultDates() {
+            const today = new Date();
+            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('taskStartDate').value = today.toISOString().split('T')[0];
+            document.getElementById('taskEndDate').value = nextWeek.toISOString().split('T')[0];
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('taskStartDate').value = dateStr;
+            document.getElementById('taskEndDate').value = dateStr; // 1 Day duration
+        }
+ 
+        function renderColorOptions(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = COLORS.map(color => `
+                <div class="color-option"
+                     style="background: ${color}"
+                     data-color="${color}"
+                     onclick="selectColor('${color}', '${containerId}')"></div>
+            `).join('');
+        }
+ 
+        function selectColor(color, containerId) {
+            const container = document.getElementById(containerId);
+            container.querySelectorAll('.color-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.color === color);
+            });
+        }
+ 
+        function updateProgressValue() {
+            const value = document.getElementById('taskProgress').value;
+            document.getElementById('progressValue').textContent = value + '%';
+        }
+
+        // Drag and Drop Logic
+        let dragContext = null;
+
+        function startDrag(e, taskId) {
+            e.stopPropagation();
+            const bar = e.currentTarget;
+            const isResize = e.target.classList.contains('gantt-bar-handle');
+            
+            dragContext = {
+                mode: isResize ? 'resize' : 'move',
+                taskId: taskId,
+                startX: e.clientX,
+                startLeft: parseFloat(bar.style.left) || 0,
+                startWidth: parseFloat(bar.style.width) || 0,
+                bar: bar,
+                dayWidth: state.dayWidth * (state.zoom / 100)
+            };
+            bar.style.cursor = isResize ? 'ew-resize' : 'grabbing';
+            document.body.style.cursor = 'grabbing';
+            
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('mouseup', handleDragEnd);
+        }
+
+        function handleDragMove(e) {
+            if (!dragContext) return;
+            const dx = e.clientX - dragContext.startX;
+            
+            if (dragContext.mode === 'move') {
+                dragContext.bar.style.left = (dragContext.startLeft + dx) + 'px';
+            } else if (dragContext.mode === 'resize') {
+                const newWidth = Math.max(dragContext.dayWidth - 4, dragContext.startWidth + dx);
+                dragContext.bar.style.width = newWidth + 'px';
+            }
+        }
+
+        function handleDragEnd(e) {
+            if (!dragContext) return;
+            
+            const dx = e.clientX - dragContext.startX;
+            const dayDiff = Math.round(dx / dragContext.dayWidth);
+            
+            if (dragContext.mode === 'move') {
+                if (dayDiff !== 0) {
+                    moveTask(dragContext.taskId, dayDiff);
+                } else if (Math.abs(dx) < 5) {
+                    openTaskModal(dragContext.taskId);
+                } else {
+                    renderGantt();
+                }
+            } else if (dragContext.mode === 'resize') {
+                if (dayDiff !== 0) {
+                    resizeTask(dragContext.taskId, dayDiff);
+                } else {
+                    renderGantt();
+                }
+            }
+
+            dragContext.bar.style.cursor = '';
+            document.body.style.cursor = '';
+            document.removeEventListener('mousemove', handleDragMove);
+            document.removeEventListener('mouseup', handleDragEnd);
+            dragContext = null;
+        }
+
+        function moveTask(taskId, dayDiff) {
+            const project = getCurrentProject();
+            const task = project.tasks.find(t => t.id === taskId);
+            if (task) {
+                const start = new Date(task.startDate);
+                const end = new Date(task.endDate);
+                start.setDate(start.getDate() + dayDiff);
+                end.setDate(end.getDate() + dayDiff);
+                task.startDate = start.toISOString().split('T')[0];
+                task.endDate = end.toISOString().split('T')[0];
+                saveState();
+                renderGantt();
+            }
+        }
+ 
+        function resizeTask(taskId, dayDiff) {
+            const project = getCurrentProject();
+            const task = project.tasks.find(t => t.id === taskId);
+            if (task) {
+                const end = new Date(task.endDate);
+                end.setDate(end.getDate() + dayDiff);
+                
+                const start = new Date(task.startDate);
+                if (end < start) end.setTime(start.getTime()); // Prevent end date before start date
+
+                task.endDate = end.toISOString().split('T')[0];
+                saveState();
+                renderGantt();
+            }
+        }
+
+        // HTML5 Drag and Drop (Structure & Reordering)
+        let dragSourceItem = null;
+
+        function handleDragStart(e, type, id) {
+            dragSourceItem = { type, id };
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            // 드래그 앤 드롭이 작동하도록 데이터 설정 (필수)
+            e.dataTransfer.setData('text/plain', id);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEndHTML5(e) {
+            e.target.classList.remove('dragging');
+            // Delay clearing dragSourceItem to ensure drop handlers can access it
+            setTimeout(() => { dragSourceItem = null; }, 0);
+        }
+
+        // 그룹(separator)에 속한 프로젝트 인덱스 범위 반환
+        function getGroupRange(sepIndex) {
+            const start = sepIndex;
+            let end = sepIndex; // separator 자신 포함
+            for (let i = sepIndex + 1; i < state.projects.length; i++) {
+                if (state.projects[i].type === 'separator') break;
+                end = i;
+            }
+            return { start, end, count: end - start + 1 };
+        }
+
+        function handleSidebarDrop(e, targetId) {
+            e.preventDefault();
+            e.stopPropagation();
+            const source = dragSourceItem;
+            if (!source) return;
+
+            // Allow reordering projects and separators
+            if (source.type === 'project') {
+                const sourceIndex = state.projects.findIndex(p => p.id === source.id);
+                const targetIndex = state.projects.findIndex(p => p.id === targetId);
+
+                if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
+                    const [moved] = state.projects.splice(sourceIndex, 1);
+                    state.projects.splice(targetIndex, 0, moved);
+                    saveState();
+                    renderProjects();
+                }
+            } else if (source.type === 'separator') {
+                const sourceIndex = state.projects.findIndex(p => p.id === source.id);
+                const targetIndex = state.projects.findIndex(p => p.id === targetId);
+                if (sourceIndex === -1 || targetIndex === -1) return;
+
+                // 드래그 대상이 자기 그룹 내부이면 무시
+                const range = getGroupRange(sourceIndex);
+                if (targetIndex >= range.start && targetIndex <= range.end) return;
+
+                // 그룹 전체(separator + 하위 프로젝트)를 추출
+                const groupItems = state.projects.splice(range.start, range.count);
+
+                // splice 후 targetIndex 재계산
+                let newTargetIndex = state.projects.findIndex(p => p.id === targetId);
+                if (newTargetIndex === -1) {
+                    // target이 그룹 내부였을 수 있음 (이미 위에서 걸러짐)
+                    state.projects.splice(range.start, 0, ...groupItems);
+                    return;
+                }
+
+                // target이 separator면 그 앞에, 프로젝트면 그 뒤에 삽입
+                const targetItem = state.projects[newTargetIndex];
+                if (targetItem && targetItem.type === 'separator') {
+                    state.projects.splice(newTargetIndex, 0, ...groupItems);
+                } else {
+                    state.projects.splice(newTargetIndex + 1, 0, ...groupItems);
+                }
+
+                saveState();
+                renderProjects();
+            } else if (source.type === 'task') {
+                if (state.currentProjectId === targetId) return;
+                const sourceProject = getCurrentProject();
+                const targetProject = state.projects.find(p => p.id === targetId);
+                const taskIndex = sourceProject.tasks.findIndex(t => t.id === source.id);
+                if (taskIndex !== -1 && targetProject) {
+                    const [movedTask] = sourceProject.tasks.splice(taskIndex, 1);
+                    targetProject.tasks.push(movedTask);
+                    saveState();
+                    renderProjects();
+                    renderGantt();
+                }
+            }
+        }
+
+        function handleTrashDrop(e) {
+            e.preventDefault();
+            const source = dragSourceItem;
+            if (!source || source.type !== 'project') return;
+            
+            // deleteProjectById already includes a confirm dialog
+            deleteProjectById(source.id);
+            e.target.classList.remove('dragging');
+        }
+
+        function handleTaskDrop(e, targetId) {
+            e.preventDefault();
+            const source = dragSourceItem;
+            if (!source || source.type !== 'task') return;
+
+            const project = getCurrentProject();
+            const sourceIndex = project.tasks.findIndex(t => t.id === source.id);
+            const targetIndex = project.tasks.findIndex(t => t.id === targetId);
+
+            if (sourceIndex !== -1 && targetIndex !== -1 && sourceIndex !== targetIndex) {
+                const [moved] = project.tasks.splice(sourceIndex, 1);
+                project.tasks.splice(targetIndex, 0, moved);
+                saveState();
+                renderGantt();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeProjectModal();
+                closeTaskModal();
+                closeMemoModal();
+            }
+        });
+
+        // ========== Electron 연동 (알람 & 항상 위에 표시) ==========
+        let alarmCheckInterval = null;
+        let notifiedTasks = new Set(); // 이미 알림 보낸 태스크 추적 (하루 1회)
+
+        function initElectronFeatures() {
+            if (typeof window.electronAPI === 'undefined') return;
+
+            // 항상 위에 표시 버튼 활성화
+            const btn = document.getElementById('alwaysOnTopBtn');
+            if (btn) btn.style.display = 'block';
+
+            // 현재 상태 반영
+            window.electronAPI.getAlwaysOnTop().then(val => {
+                updateAlwaysOnTopUI(val);
+            });
+
+            // 상태 변경 이벤트 수신
+            window.electronAPI.onAlwaysOnTopChanged((val) => {
+                updateAlwaysOnTopUI(val);
+            });
+
+            // 알람 체크 시작 (매 5분마다)
+            checkAlarms();
+            alarmCheckInterval = setInterval(checkAlarms, 5 * 60 * 1000);
+        }
+
+        function toggleAlwaysOnTop() {
+            if (typeof window.electronAPI !== 'undefined') {
+                window.electronAPI.toggleAlwaysOnTop();
+            }
+        }
+
+        function updateAlwaysOnTopUI(isOnTop) {
+            const btn = document.getElementById('alwaysOnTopBtn');
+            if (!btn) return;
+            if (isOnTop) {
+                btn.textContent = '📌 항상 위 (켜짐)';
+                btn.style.background = '#e94560';
+                btn.style.color = '#fff';
+            } else {
+                btn.textContent = '📌 항상 위에 표시';
+                btn.style.background = '#0f3460';
+                btn.style.color = '#aaa';
+            }
+        }
+
+        function checkAlarms() {
+            if (typeof window.electronAPI === 'undefined') return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayKey = today.toISOString().split('T')[0];
+
+            // 하루가 바뀌면 알림 기록 초기화
+            if (window._lastAlarmDate !== todayKey) {
+                notifiedTasks.clear();
+                window._lastAlarmDate = todayKey;
+            }
+
+            const realProjects = state.projects.filter(p => p.type !== 'separator');
+
+            // 알림을 카테고리별로 모아서 한번에 전송
+            const overdue = [];   // 마감 초과
+            const dueToday = [];  // 오늘 마감
+            const dueSoon = [];   // 1~3일 내 마감
+
+            realProjects.forEach(project => {
+                if (!project.tasks) return;
+                project.tasks.forEach(task => {
+                    if (task.progress === 100) return;
+
+                    const taskKey = `${task.id}_${todayKey}`;
+                    if (notifiedTasks.has(taskKey)) return;
+
+                    const endDate = new Date(task.endDate);
+                    endDate.setHours(0, 0, 0, 0);
+                    const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+
+                    const label = `[${project.name}] ${task.name}`;
+
+                    if (diffDays < 0) {
+                        overdue.push(`${label} (${Math.abs(diffDays)}일 초과)`);
+                        notifiedTasks.add(taskKey);
+                    } else if (diffDays === 0) {
+                        dueToday.push(label);
+                        notifiedTasks.add(taskKey);
+                    } else if (diffDays <= 3) {
+                        dueSoon.push(`${label} (D-${diffDays})`);
+                        notifiedTasks.add(taskKey);
+                    }
+                });
+            });
+
+            // 모든 항목을 하나의 알림으로 통합
+            const lines = [];
+            if (overdue.length) lines.push(`⚠️ 마감 초과 (${overdue.length}건): ${overdue.join(', ')}`);
+            if (dueToday.length) lines.push(`🔥 오늘 마감 (${dueToday.length}건): ${dueToday.join(', ')}`);
+            if (dueSoon.length) lines.push(`📋 마감 임박 (${dueSoon.length}건): ${dueSoon.join(', ')}`);
+
+            if (lines.length > 0) {
+                const total = overdue.length + dueToday.length + dueSoon.length;
+                window.electronAPI.showNotification(
+                    `Daywalker - ${total}건의 마감 알림`,
+                    lines.join('\n')
+                );
+            }
+        }
+
+        // 페이지 로드 시 Electron 기능 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initElectronFeatures, 500);
+        });
+    </script>
+</body>
+</html>

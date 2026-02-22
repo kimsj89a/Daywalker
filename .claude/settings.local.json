@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx electron .)",
+      "Bash(npx electron:*)",
+      "Bash(node -e:*)",
+      "Bash(node_modules.binelectron.cmd .)",
+      "Bash(\"./node_modules/.bin/electron\" .)",
+      "Bash(\"./node_modules/.bin/electron\" -e \"const e = require\\(''electron''\\); console.log\\(Object.keys\\(e\\).join\\('', ''\\)\\);\")",
+      "Bash(\"./node_modules/.bin/electron\" -e \"console.log\\(typeof require\\(''electron''\\).app\\)\")",
+      "Bash(\"node_modules/electron/dist/electron.exe\" .)",
+      "Bash(\"node_modules/electron/dist/electron.exe\" -e \"const e = require\\(''electron''\\); console.log\\(typeof e.ipcMain, typeof e.app, typeof e.BrowserWindow\\)\")",
+      "Bash(\"node_modules/electron/dist/electron.exe\" test_electron.js)",
+      "Bash(cmd /c:*)",
+      "Bash(\"c:\\\\Users\\\\kimsj\\\\Workflow\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" \"c:\\\\Users\\\\kimsj\\\\Workflow\")",
+      "Bash(npm start)",
+      "Bash(\"./node_modules/electron/dist/electron.exe\" -e \"console.log\\(process.type\\); console.log\\(typeof process.electronBinding\\)\")",
+      "Bash(\"./node_modules/electron/dist/electron.exe\" -e \"console.log\\(Object.keys\\(process.versions\\).filter\\(k => k.includes\\(''electron''\\)\\)\\)\")",
+      "Bash(\"./node_modules/electron/dist/electron.exe\" -e \"const m = require\\(''module''\\); console.log\\(m.builtinModules.filter\\(x => x.includes\\(''electron''\\)\\)\\)\")",
+      "Bash(\"./node_modules/electron/dist/electron.exe\" test_boot.js)",
+      "Bash(echo:*)",
+      "Bash(ELECTRON_RUN_AS_NODE= \"./node_modules/electron/dist/electron.exe\":*)",
+      "Bash(unset:*)",
+      "Bash(npm config:*)",
+      "Bash(set \"ELECTRON_RUN_AS_NODE=\")",
+      "Bash(npx electron-builder:*)",
+      "Bash(set \"CSC_IDENTITY_AUTO_DISCOVERY=false\")",
+      "Bash(dir:*)",
+      "Bash(set:*)"
+    ]
+  }
+}

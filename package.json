@@ -1,0 +1,36 @@
+{
+  "name": "workflow-gantt-manager",
+  "version": "1.0.0",
+  "description": "프로젝트 Gantt Chart 관리 도구 - Electron Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "pack": "electron-builder --win --dir"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.workflow.gantt-manager",
+    "productName": "Daywalker",
+    "win": {
+      "target": "nsis",
+      "icon": null,
+      "sign": false,
+      "signingHashAlgorithms": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "Workflow.html"
+    ]
+  }
+}
