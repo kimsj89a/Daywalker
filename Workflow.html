@@ -213,9 +213,9 @@
         }
  
         .gantt-task-header {
-            width: 250px;
-            min-width: 250px;
-            padding: 10px 15px;
+            width: 160px;
+            min-width: 160px;
+            padding: 10px 10px;
             font-weight: bold;
             color: #e94560;
             border-right: 1px solid #0f3460;
@@ -324,19 +324,28 @@
         .gantt-row:hover .gantt-task-cell {
             background: #1e2a45;
         }
+
+        .gantt-row.drag-over {
+            border-top: 2px solid #e94560;
+        }
+
+        .gantt-task-cell.dragging {
+            opacity: 0.4;
+        }
  
         .gantt-task-cell {
-            width: 250px;
-            min-width: 250px;
-            padding: 10px 15px;
+            width: 160px;
+            min-width: 160px;
+            padding: 10px 10px;
             border-right: 1px solid #0f3460;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             position: sticky;
             left: 0;
             background: #1a1a2e;
             z-index: 6;
+            cursor: grab;
         }
  
         .task-color {
@@ -2337,8 +2346,9 @@
  
                 bodyHtml += `
                     <div class="gantt-row"
-                         ondragover="handleDragOver(event)"
-                         ondrop="handleTaskDrop(event, '${task.id}')">
+                         ondragover="handleDragOver(event); this.classList.add('drag-over')"
+                         ondragleave="this.classList.remove('drag-over')"
+                         ondrop="this.classList.remove('drag-over'); handleTaskDrop(event, '${task.id}')"
                         <div class="gantt-task-cell ${completedClass} ${searchHighlightClass}"
                              draggable="true"
                              ondragstart="handleDragStart(event, 'task', '${task.id}')"
@@ -3054,8 +3064,8 @@
         document.addEventListener('mousedown', (e) => {
             const ganttArea = e.target.closest('.gantt-area');
             if (!ganttArea) return;
-            // Don't pan if clicking on a task bar or interactive element
-            if (e.target.closest('.gantt-bar, .dep-dot, button, input, select, a')) return;
+            // Don't pan if clicking on a task bar, task cell, or interactive element
+            if (e.target.closest('.gantt-bar, .gantt-task-cell, .gantt-task-header, .dep-dot, button, input, select, a')) return;
             if (e.button !== 0) return;
 
             panContext = {
