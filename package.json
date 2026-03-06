@@ -30,7 +30,8 @@
     "files": [
       "main.js",
       "preload.js",
-      "Workflow.html"
+      "Workflow.html",
+      "Widget.html"
     ]
   }
 }

@@ -191,6 +191,12 @@
             flex: 1;
             overflow: auto;
             padding: 20px;
+            cursor: grab;
+        }
+
+        .gantt-area.panning {
+            cursor: grabbing;
+            user-select: none;
         }
  
         .gantt-container {
@@ -213,6 +219,10 @@
             font-weight: bold;
             color: #e94560;
             border-right: 1px solid #0f3460;
+            position: sticky;
+            left: 0;
+            background: #1a1a2e;
+            z-index: 12;
         }
  
         .gantt-timeline-header {
@@ -310,6 +320,10 @@
         .gantt-row:hover {
             background: rgba(15, 52, 96, 0.3);
         }
+
+        .gantt-row:hover .gantt-task-cell {
+            background: #1e2a45;
+        }
  
         .gantt-task-cell {
             width: 250px;
@@ -319,6 +333,10 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            position: sticky;
+            left: 0;
+            background: #1a1a2e;
+            z-index: 6;
         }
  
         .task-color {
@@ -1298,7 +1316,8 @@
             filterCompleted: false,
             highlightTaskId: null,
             contextMenuTarget: null,
-            collapsedGroups: {}
+            collapsedGroups: {},
+            _scrollToToday: true
         };
 
         // Initialize
@@ -1315,7 +1334,7 @@
         });
  
         // ===== 데이터 저장/로드 (Firebase + localStorage) =====
-        function loadState() {
+        async function loadState() {
             // 1) 개인 UI 상태는 항상 localStorage에서 로드
             const localUI = localStorage.getItem('ganttLocalUI');
             if (localUI) {
@@ -1325,16 +1344,77 @@
                 state.collapsedGroups = parsed.collapsedGroups || {};
             }
 
-            // 2) Firebase 모드: 실시간 리스너로 projects 동기화
+            // 2) Electron 로컬 파일 저장 모드 (우선)
+            if (typeof window.electronAPI !== 'undefined' && window.electronAPI.loadLocalData) {
+                try {
+                    const raw = await window.electronAPI.loadLocalData('projects.json');
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        state.projects = (data || []).map(p => ({
+                            ...p,
+                            tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
+                            memos: Array.isArray(p.memos) ? p.memos : (p.memos ? Object.values(p.memos) : [])
+                        }));
+                        setSyncStatus('synced');
+                        renderProjects();
+                        renderGantt();
+
+                        // Firebase에도 있으면 → 로컬 파일로 마이그레이션 완료 표시
+                        console.log('로컬 파일에서 프로젝트 로드 완료:', state.projects.length, '개');
+                        return;
+                    }
+
+                    // 로컬 파일이 없으면 Firebase/localStorage에서 마이그레이션
+                    let migrated = false;
+
+                    if (firebaseEnabled && _firebaseRef) {
+                        const snapshot = await _firebaseRef.once('value');
+                        let data = snapshot.val();
+                        if (data) {
+                            if (!Array.isArray(data)) data = Object.values(data);
+                            state.projects = data.map(p => ({
+                                ...p,
+                                tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
+                                memos: Array.isArray(p.memos) ? p.memos : (p.memos ? Object.values(p.memos) : [])
+                            }));
+                            migrated = true;
+                            console.log('Firebase → 로컬 파일 마이그레이션');
+                        }
+                    }
+
+                    if (!migrated) {
+                        const saved = localStorage.getItem('ganttManagerState');
+                        if (saved) {
+                            const parsed = JSON.parse(saved);
+                            state.projects = parsed.projects || [];
+                            migrated = true;
+                            console.log('localStorage → 로컬 파일 마이그레이션');
+                        }
+                    }
+
+                    if (migrated) {
+                        await window.electronAPI.saveLocalData('projects.json', JSON.stringify(state.projects, null, 2));
+                        setSyncStatus('synced');
+                    } else {
+                        setSyncStatus('synced');
+                    }
+
+                    renderProjects();
+                    renderGantt();
+                    return;
+                } catch (err) {
+                    console.error('로컬 파일 로드 실패:', err);
+                }
+            }
+
+            // 3) 비-Electron 환경 폴백 (Firebase → localStorage)
             if (firebaseEnabled && _firebaseRef) {
                 _firebaseRef.on('value', (snapshot) => {
                     _syncingFromFirebase = true;
                     let data = snapshot.val();
-                    // Firebase는 배열을 객체로 변환할 수 있으므로 복원
                     if (data && !Array.isArray(data)) {
                         data = Object.values(data);
                     }
-                    // 각 프로젝트에 tasks, memos 배열이 있는지 보장
                     state.projects = (data || []).map(p => ({
                         ...p,
                         tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
@@ -1346,57 +1426,18 @@
                     _syncingFromFirebase = false;
                 });
 
-                // 연결 상태 모니터링
                 firebase.database().ref('.info/connected').on('value', (snap) => {
-                    if (snap.val() === true) {
-                        setSyncStatus('synced');
-                    } else {
-                        setSyncStatus('offline');
-                    }
+                    setSyncStatus(snap.val() === true ? 'synced' : 'offline');
                 });
-
-                // 기존 localStorage 데이터 → Firebase 마이그레이션
-                const legacy = localStorage.getItem('ganttManagerState');
-                if (legacy) {
-                    const parsed = JSON.parse(legacy);
-                    if (parsed.projects && parsed.projects.length > 0) {
-                        _firebaseRef.once('value').then((snapshot) => {
-                            const existing = snapshot.val();
-                            if (!existing || existing.length === 0) {
-                                _firebaseRef.set(parsed.projects);
-                                console.log('localStorage 데이터를 Firebase로 마이그레이션 완료');
-                            }
-                            localStorage.removeItem('ganttManagerState');
-                        });
-                    }
-                }
             } else {
-                // 3) Firebase 없으면 기존 localStorage 폴백
                 setSyncStatus('offline');
                 const saved = localStorage.getItem('ganttManagerState');
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     state.projects = parsed.projects || [];
-                    state.currentProjectId = parsed.currentProjectId || null;
-                    state.filterCompleted = parsed.filterCompleted || false;
-                    state.collapsedGroups = parsed.collapsedGroups || {};
-
-                    // Migration: If groupOrder exists, flatten the list
-                    if (parsed.groupOrder && parsed.groupOrder.length > 0) {
-                        const newProjects = [];
-                        parsed.groupOrder.forEach(g => {
-                            if (g !== '기본') {
-                                newProjects.push({ id: generateId(), type: 'separator', name: g });
-                            }
-                            const groupProjects = state.projects.filter(p => (p.group || '기본') === g);
-                            newProjects.push(...groupProjects);
-                        });
-                        const processedIds = new Set(newProjects.filter(p => p.type !== 'separator').map(p => p.id));
-                        const orphans = state.projects.filter(p => !processedIds.has(p.id));
-                        newProjects.push(...orphans);
-                        state.projects = newProjects;
-                    }
                 }
+                renderProjects();
+                renderGantt();
             }
         }
 
@@ -1408,20 +1449,28 @@
                 collapsedGroups: state.collapsedGroups
             }));
 
-            // 2) 공유 데이터(projects) → Firebase 또는 localStorage
-            if (firebaseEnabled && _firebaseRef && !_syncingFromFirebase) {
+            // 2) 프로젝트 데이터 → 로컬 파일 (Electron) 우선
+            if (typeof window.electronAPI !== 'undefined' && window.electronAPI.saveLocalData) {
+                setSyncStatus('saving');
+                window.electronAPI.saveLocalData('projects.json', JSON.stringify(state.projects, null, 2))
+                    .then(() => setSyncStatus('synced'))
+                    .catch((err) => {
+                        console.error('로컬 파일 저장 실패:', err);
+                        setSyncStatus('offline');
+                    });
+            } else if (firebaseEnabled && _firebaseRef && !_syncingFromFirebase) {
+                // 비-Electron 환경에서 Firebase 폴백
                 setSyncStatus('saving');
                 _firebaseRef.set(state.projects).then(() => {
                     setSyncStatus('synced');
                 }).catch((err) => {
                     console.error('Firebase 저장 실패:', err);
                     setSyncStatus('offline');
-                    // 실패 시 localStorage 백업
                     localStorage.setItem('ganttManagerState', JSON.stringify({
                         projects: state.projects
                     }));
                 });
-            } else if (!firebaseEnabled) {
+            } else {
                 localStorage.setItem('ganttManagerState', JSON.stringify({
                     projects: state.projects,
                     currentProjectId: state.currentProjectId,
@@ -1535,6 +1584,7 @@
  
         function selectProject(projectId) {
             state.currentProjectId = projectId;
+            state._scrollToToday = true;
             saveState();
             renderProjects();
             renderGantt();
@@ -1542,6 +1592,7 @@
 
         function goToDashboard() {
             state.currentProjectId = null;
+            state._scrollToToday = true;
             saveState();
             renderProjects();
             renderGantt();
@@ -2209,6 +2260,10 @@
                     searchInput.value = '';
                 }
                 if (projectDescription) projectDescription.style.display = 'none';
+                if (state._scrollToToday) {
+                    state._scrollToToday = false;
+                    scrollToToday('dashboardGanttScroll');
+                }
                 return;
             }
  
@@ -2335,6 +2390,11 @@
             
             // Draw dependencies after render
             setTimeout(drawDependencies, 0);
+
+            if (state._scrollToToday) {
+                state._scrollToToday = false;
+                scrollToToday();
+            }
         }
 
         function drawDependencies() {
@@ -2407,6 +2467,22 @@
                         svg.appendChild(tgtCircle);
                     });
                 }
+            });
+        }
+
+        function scrollToToday(containerId) {
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const container = document.getElementById(containerId || 'ganttArea');
+                    if (!container) return;
+                    const todayEl = container.querySelector('.gantt-day.today') ||
+                                    container.querySelector('[data-today="true"]');
+                    if (!todayEl) return;
+                    const containerRect = container.getBoundingClientRect();
+                    const todayRect = todayEl.getBoundingClientRect();
+                    const targetScroll = todayRect.left - containerRect.left + container.scrollLeft - (containerRect.width / 2) + (todayRect.width / 2);
+                    container.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
+                }, 50);
             });
         }
 
@@ -2566,7 +2642,7 @@
                 html += `
                     <div style="background: #16213e; border: 1px solid #0f3460; border-radius: 12px; padding: 20px; margin-bottom: 30px; overflow: hidden;">
                         <h3 style="margin-bottom: 20px; color: #fff; font-size: 1.1rem;">전체 프로젝트 일정</h3>
-                        <div style="overflow-x: auto; border: 1px solid #0f3460; border-radius: 6px;">
+                        <div id="dashboardGanttScroll" class="gantt-area" style="overflow-x: auto; border: 1px solid #0f3460; border-radius: 6px; padding: 0;">
                             <div style="min-width: 100%;">
                                 <!-- Header -->
                                 <div style="display: flex; background: #1a1a2e; border-bottom: 1px solid #0f3460; position: sticky; left: 0;">
@@ -2578,7 +2654,7 @@
                     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                     const isToday = isSameDay(date, new Date());
                     html += `
-                        <div style="width: ${dayWidth}px; min-width: ${dayWidth}px; text-align: center; padding: 8px 0; font-size: 0.75rem; color: #aaa; border-right: 1px solid #0f3460; ${isWeekend ? 'background: rgba(233, 69, 96, 0.1);' : ''} ${isToday ? 'background: rgba(233, 69, 96, 0.3); color: #e94560; font-weight: bold;' : ''}">
+                        <div ${isToday ? 'data-today="true"' : ''} style="width: ${dayWidth}px; min-width: ${dayWidth}px; text-align: center; padding: 8px 0; font-size: 0.75rem; color: #aaa; border-right: 1px solid #0f3460; ${isWeekend ? 'background: rgba(233, 69, 96, 0.1);' : ''} ${isToday ? 'background: rgba(233, 69, 96, 0.3); color: #e94560; font-weight: bold;' : ''}">
                             ${formatShortDate(day)}
                         </div>`;
                 });
@@ -2795,7 +2871,13 @@
                 if (start < minDate) minDate = start;
                 if (end > maxDate) maxDate = end;
             });
- 
+
+            // Always include today in the range
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (today < minDate) minDate = new Date(today);
+            if (today > maxDate) maxDate = new Date(today);
+
             // Add padding
             minDate.setDate(minDate.getDate() - 3);
             maxDate.setDate(maxDate.getDate() + 7);
@@ -2965,6 +3047,39 @@
             document.removeEventListener('mouseup', handleDragEnd);
             dragContext = null;
         }
+
+        // Pan-scroll (grab to scroll)
+        let panContext = null;
+
+        document.addEventListener('mousedown', (e) => {
+            const ganttArea = e.target.closest('.gantt-area');
+            if (!ganttArea) return;
+            // Don't pan if clicking on a task bar or interactive element
+            if (e.target.closest('.gantt-bar, .dep-dot, button, input, select, a')) return;
+            if (e.button !== 0) return;
+
+            panContext = {
+                el: ganttArea,
+                startX: e.clientX,
+                startY: e.clientY,
+                scrollLeft: ganttArea.scrollLeft,
+                scrollTop: ganttArea.scrollTop
+            };
+            ganttArea.classList.add('panning');
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!panContext) return;
+            panContext.el.scrollLeft = panContext.scrollLeft - (e.clientX - panContext.startX);
+            panContext.el.scrollTop = panContext.scrollTop - (e.clientY - panContext.startY);
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!panContext) return;
+            panContext.el.classList.remove('panning');
+            panContext = null;
+        });
 
         function moveTask(taskId, dayDiff) {
             const project = getCurrentProject();

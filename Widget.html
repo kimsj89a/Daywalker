@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Daywalker Widget</title>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Malgun Gothic', 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .widget-header {
+            padding: 10px 16px;
+            background: #16213e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid #0f3460;
+            flex-shrink: 0;
+        }
+
+        .widget-header h1 {
+            font-size: 0.9rem;
+            color: #e94560;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .header-right .date-info {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        .header-right button {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .header-right button:hover {
+            color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .widget-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 8px;
+        }
+
+        .day-row {
+            margin-bottom: 3px;
+            border-radius: 6px;
+            padding: 6px 10px;
+            background: #16213e;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .day-row.today {
+            border-color: #e94560;
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.15), rgba(233, 69, 96, 0.05));
+        }
+
+        .day-row.past {
+            opacity: 0.5;
+        }
+
+        .day-row.weekend {
+            opacity: 0.7;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .day-name {
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .day-name .dow {
+            color: #aaa;
+            font-weight: normal;
+            font-size: 0.7rem;
+        }
+
+        .today .day-name {
+            color: #e94560;
+        }
+
+        .day-date {
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .today .day-date {
+            color: #e94560;
+        }
+
+        .task-count {
+            font-size: 0.65rem;
+            color: #555;
+            background: rgba(255,255,255,0.05);
+            padding: 1px 6px;
+            border-radius: 10px;
+        }
+
+        .task-pills {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .task-pill {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: default;
+        }
+
+        .task-pill.completed {
+            opacity: 0.35;
+            text-decoration: line-through;
+        }
+
+        .task-project {
+            font-size: 0.6rem;
+            opacity: 0.65;
+            flex-shrink: 0;
+        }
+
+        .task-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .no-tasks {
+            font-size: 0.7rem;
+            color: #444;
+            padding: 2px 0;
+        }
+
+        .widget-footer {
+            padding: 6px 12px;
+            background: #16213e;
+            border-top: 1px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            font-size: 0.7rem;
+            color: #555;
+        }
+
+        .sync-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .sync-dot.online { background: #1dd1a1; }
+        .sync-dot.offline { background: #ff6b6b; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e94560; }
+    </style>
+</head>
+<body>
+    <div class="widget-header">
+        <h1>Daywalker</h1>
+        <div class="header-right">
+            <span class="date-info" id="dateInfo"></span>
+            <button onclick="openMainWindow()" title="메인 창 열기">&#x2197;</button>
+        </div>
+    </div>
+    <div class="widget-body" id="widgetBody">
+        <div style="text-align: center; color: #555; padding: 40px;">로딩 중...</div>
+    </div>
+    <div class="widget-footer">
+        <span id="syncStatus"><span class="sync-dot"></span>연결 중...</span>
+        <span id="taskSummary"></span>
+    </div>
+
+    <script>
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAE3xKYtrg2sn2AuLNE1lMN2nUcIv6kDeg",
+            authDomain: "sj-dash-9b65d.firebaseapp.com",
+            databaseURL: "https://sj-dash-9b65d-default-rtdb.firebaseio.com",
+            projectId: "sj-dash-9b65d",
+            storageBucket: "sj-dash-9b65d.firebasestorage.app",
+            messagingSenderId: "751850940500",
+            appId: "1:751850940500:web:b81b474a0d3acdbcb4a5c1"
+        };
+
+        const WORKSPACE_ID = 'default';
+        const DOW_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+        let projects = [];
+        let firebaseEnabled = false;
+
+        // 로컬 파일 우선 → Firebase 폴백
+        async function initData() {
+            // Electron 로컬 파일 모드
+            if (typeof window.electronAPI !== 'undefined' && window.electronAPI.loadLocalData) {
+                try {
+                    const raw = await window.electronAPI.loadLocalData('projects.json');
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        projects = (data || [])
+                            .filter(p => p.type !== 'separator')
+                            .map(p => ({
+                                ...p,
+                                tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : [])
+                            }));
+                        setSyncStatus(true);
+                        render();
+
+                        // 주기적으로 파일 다시 읽기 (메인 앱에서 변경 감지)
+                        setInterval(async () => {
+                            try {
+                                const updated = await window.electronAPI.loadLocalData('projects.json');
+                                if (updated) {
+                                    const d = JSON.parse(updated);
+                                    projects = (d || [])
+                                        .filter(p => p.type !== 'separator')
+                                        .map(p => ({
+                                            ...p,
+                                            tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : [])
+                                        }));
+                                    render();
+                                }
+                            } catch (e) {}
+                        }, 3000);
+                        return;
+                    }
+                } catch (e) {}
+            }
+
+            // Firebase 폴백
+            if (FIREBASE_CONFIG.apiKey && typeof firebase !== 'undefined') {
+                try {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                    const ref = firebase.database().ref(`workspaces/${WORKSPACE_ID}/projects`);
+                    firebaseEnabled = true;
+
+                    ref.on('value', (snapshot) => {
+                        let data = snapshot.val();
+                        if (data && !Array.isArray(data)) data = Object.values(data);
+                        projects = (data || [])
+                            .filter(p => p.type !== 'separator')
+                            .map(p => ({
+                                ...p,
+                                tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : [])
+                            }));
+                        render();
+                    });
+
+                    firebase.database().ref('.info/connected').on('value', (snap) => {
+                        setSyncStatus(snap.val() === true);
+                    });
+                } catch (e) {
+                    loadFromLocalStorage();
+                }
+            } else {
+                loadFromLocalStorage();
+            }
+        }
+
+        initData();
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('ganttManagerState');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                projects = (parsed.projects || []).filter(p => p.type !== 'separator');
+            }
+            setSyncStatus(false);
+            render();
+        }
+
+        function setSyncStatus(online) {
+            const el = document.getElementById('syncStatus');
+            el.innerHTML = `<span class="sync-dot ${online ? 'online' : 'offline'}"></span>${online ? '동기화 중' : '오프라인'}`;
+        }
+
+        function getWeekDays() {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0=Sun
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            monday.setHours(0, 0, 0, 0);
+
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                days.push(d);
+            }
+            return days;
+        }
+
+        function getTasksForDay(date) {
+            const dateStr = date.toISOString().split('T')[0];
+            const result = [];
+
+            projects.forEach(project => {
+                (project.tasks || []).forEach(task => {
+                    if (task.startDate <= dateStr && task.endDate >= dateStr) {
+                        result.push({
+                            ...task,
+                            projectName: project.name,
+                            projectColor: project.color || '#e94560'
+                        });
+                    }
+                });
+            });
+
+            // Sort: incomplete first, then by start date
+            result.sort((a, b) => {
+                if ((a.progress === 100) !== (b.progress === 100)) return a.progress === 100 ? 1 : -1;
+                return a.startDate.localeCompare(b.startDate);
+            });
+
+            return result;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function render() {
+            const body = document.getElementById('widgetBody');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const days = getWeekDays();
+
+            // Header date info
+            const firstDay = days[0];
+            const lastDay = days[6];
+            document.getElementById('dateInfo').textContent =
+                `${firstDay.getMonth() + 1}/${firstDay.getDate()} ~ ${lastDay.getMonth() + 1}/${lastDay.getDate()}`;
+
+            let totalTasks = 0;
+            let completedTasks = 0;
+            let html = '';
+
+            days.forEach(day => {
+                const isToday = day.getTime() === today.getTime();
+                const isPast = day < today;
+                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                const tasks = getTasksForDay(day);
+
+                let dayClass = 'day-row';
+                if (isToday) dayClass += ' today';
+                else if (isPast) dayClass += ' past';
+                if (isWeekend) dayClass += ' weekend';
+
+                const dateLabel = `${day.getMonth() + 1}/${day.getDate()}`;
+                const dowLabel = DOW_NAMES[day.getDay()];
+
+                html += `<div class="${dayClass}">`;
+                html += `<div class="day-header">`;
+                html += `<span class="day-name">${dateLabel} <span class="dow">${dowLabel}</span>${isToday ? ' <span style="color:#e94560;font-size:0.65rem;">TODAY</span>' : ''}</span>`;
+                if (tasks.length > 0) {
+                    html += `<span class="task-count">${tasks.length}</span>`;
+                }
+                html += `</div>`;
+
+                if (tasks.length > 0) {
+                    html += `<div class="task-pills">`;
+                    tasks.forEach(task => {
+                        const isCompleted = task.progress === 100;
+                        totalTasks++;
+                        if (isCompleted) completedTasks++;
+
+                        html += `<div class="task-pill ${isCompleted ? 'completed' : ''}"
+                                      style="background: ${task.color || task.projectColor};"
+                                      title="${escapeHtml(task.projectName)}: ${escapeHtml(task.name)} (${task.startDate} ~ ${task.endDate})">
+                            <span class="task-name">${escapeHtml(task.name)}</span>
+                            <span class="task-project">${escapeHtml(task.projectName)}</span>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                } else {
+                    html += `<div class="no-tasks">-</div>`;
+                }
+
+                html += `</div>`;
+            });
+
+            body.innerHTML = html;
+
+            // Summary
+            const activeTasks = totalTasks - completedTasks;
+            document.getElementById('taskSummary').textContent = activeTasks > 0 ? `${activeTasks}건 진행 중` : '모두 완료';
+        }
+
+        function openMainWindow() {
+            if (typeof window.electronAPI !== 'undefined') {
+                window.electronAPI.openMainWindow();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,10 +1,12 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, Notification, nativeImage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 // GPU 캐시 오류 방지
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 
 let mainWindow = null;
+let widgetWindow = null;
 let tray = null;
 let isAlwaysOnTop = false;
 
@@ -36,6 +38,43 @@ function createWindow() {
       event.preventDefault();
       mainWindow.hide();
     }
+  });
+}
+
+function createWidgetWindow() {
+  if (widgetWindow && !widgetWindow.isDestroyed()) {
+    widgetWindow.show();
+    widgetWindow.focus();
+    return;
+  }
+
+  widgetWindow = new BrowserWindow({
+    width: 360,
+    height: 520,
+    minWidth: 280,
+    minHeight: 300,
+    title: 'Daywalker Widget',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    },
+    frame: false,
+    transparent: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: true,
+    show: false
+  });
+
+  widgetWindow.loadFile('Widget.html');
+
+  widgetWindow.once('ready-to-show', () => {
+    widgetWindow.show();
+  });
+
+  widgetWindow.on('closed', () => {
+    widgetWindow = null;
   });
 }
 
@@ -151,6 +190,13 @@ function updateTrayMenu() {
       }
     },
     {
+      label: '위젯 열기',
+      click: () => {
+        createWidgetWindow();
+      }
+    },
+    { type: 'separator' },
+    {
       label: '항상 위에 표시',
       type: 'checkbox',
       checked: isAlwaysOnTop,
@@ -199,6 +245,31 @@ function setupIPC() {
   ipcMain.handle('get-always-on-top', () => {
     return isAlwaysOnTop;
   });
+
+  ipcMain.on('open-main-window', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  // 로컬 파일 저장/읽기
+  const dataDir = path.join(app.getPath('userData'), 'data');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+  ipcMain.handle('load-local-data', (event, filename) => {
+    const filePath = path.join(dataDir, filename);
+    if (!fs.existsSync(filePath)) return null;
+    return fs.readFileSync(filePath, 'utf-8');
+  });
+
+  ipcMain.handle('save-local-data', (event, filename, data) => {
+    const filePath = path.join(dataDir, filename);
+    fs.writeFileSync(filePath, data, 'utf-8');
+    return true;
+  });
+
+  ipcMain.handle('get-data-path', () => dataDir);
 }
 
 app.whenReady().then(() => {
