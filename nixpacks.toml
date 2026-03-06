@@ -1,5 +1,8 @@
 [phases.setup]
 nixPkgs = ["nodejs_20"]
 
+[phases.build]
+cmds = ["echo 'skip build'"]
+
 [start]
 cmd = "node server.js"
