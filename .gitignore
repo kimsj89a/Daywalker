@@ -1,2 +1,5 @@
 node_modules/
 dist/
+data/google-token.json
+data/sync-map.json
+.env

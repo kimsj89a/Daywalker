@@ -1,36 +1,189 @@
-const http = require('http');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const { google } = require('googleapis');
 
+const app = express();
 const PORT = process.env.PORT || 3000;
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const MIME = {
-    '.html': 'text/html',
-    '.css': 'text/css',
-    '.js': 'application/javascript',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon'
-};
+app.use(express.json({ limit: '10mb' }));
 
-const server = http.createServer((req, res) => {
-    let url = req.url === '/' ? '/Workflow.html' : req.url;
-    const filePath = path.join(__dirname, url);
-    const ext = path.extname(filePath);
+// ========== Static Files ==========
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'Workflow.html')));
+app.get('/Widget.html', (req, res) => res.sendFile(path.join(__dirname, 'Widget.html')));
+app.use(express.static(__dirname, { index: false }));
 
-    fs.readFile(filePath, (err, data) => {
-        if (err) {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('Not Found');
-            return;
-        }
-        res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
-        res.end(data);
+// ========== Google OAuth ==========
+function getOAuth2Client() {
+    return new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URI
+    );
+}
+
+app.get('/api/auth/google', (req, res) => {
+    const oauth2Client = getOAuth2Client();
+    const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        prompt: 'consent',
+        scope: ['https://www.googleapis.com/auth/calendar']
     });
+    res.redirect(url);
 });
 
-server.listen(PORT, () => {
-    console.log(`Daywalker running on port ${PORT}`);
+app.get('/api/auth/callback', async (req, res) => {
+    const { code } = req.query;
+    if (!code) return res.status(400).send('Missing code');
+    try {
+        const oauth2Client = getOAuth2Client();
+        const { tokens } = await oauth2Client.getToken(code);
+        fs.writeFileSync(path.join(DATA_DIR, 'google-token.json'), JSON.stringify(tokens, null, 2));
+        res.send('<script>window.close();</script><p>Google Calendar 연결 완료! 이 창을 닫으세요.</p>');
+    } catch (err) {
+        console.error('OAuth error:', err);
+        res.status(500).send('인증 실패: ' + err.message);
+    }
 });
+
+app.get('/api/auth/status', (req, res) => {
+    const connected = fs.existsSync(path.join(DATA_DIR, 'google-token.json'));
+    res.json({ connected });
+});
+
+app.post('/api/auth/disconnect', (req, res) => {
+    [path.join(DATA_DIR, 'google-token.json'), path.join(DATA_DIR, 'sync-map.json')].forEach(f => {
+        if (fs.existsSync(f)) fs.unlinkSync(f);
+    });
+    res.json({ ok: true });
+});
+
+// ========== Sync Logic ==========
+const CALENDAR_NAME = 'Daywalker';
+
+function loadSyncMap() {
+    const p = path.join(DATA_DIR, 'sync-map.json');
+    if (!fs.existsSync(p)) return {};
+    return JSON.parse(fs.readFileSync(p, 'utf-8'));
+}
+
+function saveSyncMap(map) {
+    fs.writeFileSync(path.join(DATA_DIR, 'sync-map.json'), JSON.stringify(map, null, 2));
+}
+
+function taskToEvent(task, projectName) {
+    const prefix = task.progress === 100 ? '[완료] ' : '';
+    const endDate = new Date(task.endDate);
+    endDate.setDate(endDate.getDate() + 1);
+    return {
+        summary: `${prefix}[${projectName}] ${task.name}`,
+        start: { date: task.startDate },
+        end: { date: endDate.toISOString().split('T')[0] },
+        extendedProperties: { private: { daywalkerTaskId: task.id } }
+    };
+}
+
+function eventToTaskUpdate(event) {
+    const summary = event.summary || '';
+    const completed = summary.startsWith('[완료] ');
+    const clean = summary.replace(/^\[완료\] /, '');
+    const match = clean.match(/^\[(.+?)\]\s*(.+)$/);
+    const endDate = new Date(event.end.date);
+    endDate.setDate(endDate.getDate() - 1);
+    return {
+        projectName: match ? match[1] : null,
+        taskName: match ? match[2] : clean,
+        startDate: event.start.date,
+        endDate: endDate.toISOString().split('T')[0],
+        progress: completed ? 100 : undefined,
+        eventUpdated: event.updated
+    };
+}
+
+async function getOrCreateCalendar(calendar) {
+    const { data } = await calendar.calendarList.list();
+    const existing = data.items.find(c => c.summary === CALENDAR_NAME);
+    if (existing) return existing.id;
+    const { data: created } = await calendar.calendars.insert({ requestBody: { summary: CALENDAR_NAME } });
+    return created.id;
+}
+
+async function syncWithGoogle(oauth2Client, projects) {
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    const calendarId = await getOrCreateCalendar(calendar);
+    const syncMap = loadSyncMap();
+    const changes = { created: [], updated: [], deleted: [] };
+
+    const { data: eventList } = await calendar.events.list({
+        calendarId, maxResults: 2500, singleEvents: true
+    });
+    const googleEvents = eventList.items || [];
+    const eventByTaskId = {};
+    googleEvents.forEach(e => {
+        const tid = e.extendedProperties?.private?.daywalkerTaskId;
+        if (tid) eventByTaskId[tid] = e;
+    });
+
+    const allTasks = [];
+    projects.forEach(p => {
+        if (p.type === 'separator') return;
+        (p.tasks || []).forEach(t => allTasks.push({ task: t, projectName: p.name }));
+    });
+
+    for (const { task, projectName } of allTasks) {
+        const eventData = taskToEvent(task, projectName);
+        const existing = eventByTaskId[task.id];
+
+        if (existing) {
+            const taskMod = task.lastModified ? new Date(task.lastModified) : new Date(0);
+            const eventMod = new Date(existing.updated);
+
+            if (taskMod > eventMod) {
+                await calendar.events.update({ calendarId, eventId: existing.id, requestBody: eventData });
+            } else if (eventMod > taskMod) {
+                changes.updated.push({ taskId: task.id, ...eventToTaskUpdate(existing) });
+            }
+            delete eventByTaskId[task.id];
+        } else {
+            const { data: created } = await calendar.events.insert({ calendarId, requestBody: eventData });
+            syncMap[task.id] = created.id;
+        }
+    }
+
+    // Daywalker에서 삭제된 태스크 → Google에서도 삭제
+    for (const [taskId, event] of Object.entries(eventByTaskId)) {
+        if (syncMap[taskId]) {
+            try { await calendar.events.delete({ calendarId, eventId: event.id }); } catch (e) { }
+            delete syncMap[taskId];
+        }
+    }
+
+    saveSyncMap(syncMap);
+    return changes;
+}
+
+app.post('/api/sync', async (req, res) => {
+    const tokenPath = path.join(DATA_DIR, 'google-token.json');
+    if (!fs.existsSync(tokenPath)) return res.status(401).json({ error: 'Google Calendar 연결이 필요합니다' });
+
+    try {
+        const tokens = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
+        const oauth2Client = getOAuth2Client();
+        oauth2Client.setCredentials(tokens);
+        oauth2Client.on('tokens', (newTokens) => {
+            fs.writeFileSync(tokenPath, JSON.stringify({ ...tokens, ...newTokens }, null, 2));
+        });
+
+        const projects = req.body.projects || [];
+        const changes = await syncWithGoogle(oauth2Client, projects);
+        res.json({ ok: true, changes });
+    } catch (err) {
+        console.error('Sync error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ========== Start ==========
+app.listen(PORT, () => console.log(`Daywalker running on port ${PORT}`));

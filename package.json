@@ -34,5 +34,9 @@
       "Workflow.html",
       "Widget.html"
     ]
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "googleapis": "^171.4.0"
   }
 }

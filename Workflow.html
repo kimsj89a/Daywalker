@@ -1111,6 +1111,7 @@
                     🗑️ 휴지통 (드래그하여 삭제)
                 </div>
                 <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(this)">
+                <button id="googleCalBtn" onclick="connectGoogleCalendar()" style="width:100%; padding:10px; background:#4285f4; color:white; border:none; border-radius:8px; cursor:pointer; margin-top:8px; display:none; font-size:0.85rem;">📅 Google Calendar 연결</button>
                 <div id="syncStatus" style="text-align:center; font-size:0.75rem; color:#666; margin-top:12px; padding:6px; border-top:1px solid #1a1a2e;">● 연결 확인 중...</div>
             </div>
         </aside>
@@ -1452,6 +1453,15 @@
         }
 
         function saveState() {
+            // 0) 태스크 lastModified 갱신
+            const _now = new Date().toISOString();
+            state.projects.forEach(p => {
+                if (p.type === 'separator') return;
+                (p.tasks || []).forEach(t => {
+                    if (!t.lastModified) t.lastModified = _now;
+                });
+            });
+
             // 1) 개인 UI 상태 → localStorage
             localStorage.setItem('ganttLocalUI', JSON.stringify({
                 currentProjectId: state.currentProjectId,
@@ -3102,22 +3112,24 @@
                 end.setDate(end.getDate() + dayDiff);
                 task.startDate = start.toISOString().split('T')[0];
                 task.endDate = end.toISOString().split('T')[0];
+                task.lastModified = new Date().toISOString();
                 saveState();
                 renderGantt();
             }
         }
- 
+
         function resizeTask(taskId, dayDiff) {
             const project = getCurrentProject();
             const task = project.tasks.find(t => t.id === taskId);
             if (task) {
                 const end = new Date(task.endDate);
                 end.setDate(end.getDate() + dayDiff);
-                
+
                 const start = new Date(task.startDate);
-                if (end < start) end.setTime(start.getTime()); // Prevent end date before start date
+                if (end < start) end.setTime(start.getTime());
 
                 task.endDate = end.toISOString().split('T')[0];
+                task.lastModified = new Date().toISOString();
                 saveState();
                 renderGantt();
             }
@@ -3362,9 +3374,95 @@
             }
         }
 
+        // ========== Google Calendar 동기화 ==========
+        let _gcalSyncInterval = null;
+
+        async function initGoogleCalSync() {
+            if (typeof window.electronAPI !== 'undefined') return;
+            const btn = document.getElementById('googleCalBtn');
+            if (!btn) return;
+            btn.style.display = 'block';
+
+            try {
+                const res = await fetch('/api/auth/status');
+                const { connected } = await res.json();
+                if (connected) {
+                    btn.textContent = '📅 Google Calendar 연결됨';
+                    btn.style.background = '#2d8659';
+                    btn.onclick = disconnectGoogleCalendar;
+                    startGcalSync();
+                } else {
+                    btn.textContent = '📅 Google Calendar 연결';
+                    btn.style.background = '#4285f4';
+                    btn.onclick = connectGoogleCalendar;
+                }
+            } catch (e) { /* server not available */ }
+        }
+
+        function connectGoogleCalendar() {
+            window.open('/api/auth/google', '_blank', 'width=500,height=600');
+            setTimeout(() => initGoogleCalSync(), 5000);
+        }
+
+        async function disconnectGoogleCalendar() {
+            if (!confirm('Google Calendar 연결을 해제하시겠습니까?')) return;
+            await fetch('/api/auth/disconnect', { method: 'POST' });
+            stopGcalSync();
+            initGoogleCalSync();
+        }
+
+        function startGcalSync() {
+            if (_gcalSyncInterval) return;
+            doGcalSync();
+            _gcalSyncInterval = setInterval(doGcalSync, 5 * 60 * 1000);
+        }
+
+        function stopGcalSync() {
+            if (_gcalSyncInterval) clearInterval(_gcalSyncInterval);
+            _gcalSyncInterval = null;
+        }
+
+        async function doGcalSync() {
+            try {
+                const res = await fetch('/api/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projects: state.projects })
+                });
+                if (!res.ok) return;
+                const { changes } = await res.json();
+                let changed = false;
+
+                (changes.updated || []).forEach(u => {
+                    state.projects.forEach(p => {
+                        if (p.type === 'separator') return;
+                        const task = (p.tasks || []).find(t => t.id === u.taskId);
+                        if (task) {
+                            task.startDate = u.startDate;
+                            task.endDate = u.endDate;
+                            if (u.taskName) task.name = u.taskName;
+                            if (u.progress !== undefined) task.progress = u.progress;
+                            task.lastModified = new Date().toISOString();
+                            changed = true;
+                        }
+                    });
+                });
+
+                if (changed) {
+                    renderProjects();
+                    renderGantt();
+                    saveState();
+                }
+                console.log('Google Calendar sync complete:', changes);
+            } catch (e) {
+                console.error('Google Calendar sync error:', e);
+            }
+        }
+
         // 페이지 로드 시 Electron 기능 초기화
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(initElectronFeatures, 500);
+            setTimeout(initGoogleCalSync, 1000);
         });
     </script>
 </body>

@@ -1,5 +1,8 @@
 FROM node:20-alpine
 WORKDIR /app
-COPY Workflow.html Widget.html server.js ./
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY server.js Workflow.html Widget.html ./
+RUN mkdir -p data
 EXPOSE 3000
 CMD ["node", "server.js"]
