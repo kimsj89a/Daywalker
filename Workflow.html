@@ -1089,6 +1089,145 @@
             background: #feca57aa !important;
             border: 1px solid #feca57;
         }
+
+        /* ===== Sticker Board ===== */
+        .sticker-board {
+            position: relative;
+            min-height: 300px;
+            margin-top: 2px;
+            background: #12192e;
+            background-image: radial-gradient(circle, #1a2240 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-top: 2px solid #0f3460;
+            overflow: auto;
+        }
+
+        .sticker-board-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 15px;
+            background: rgba(18, 25, 46, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .sticker-board-header h4 {
+            font-size: 0.8rem;
+            color: #888;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .sticker-board-header button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .sticker-board-header button:hover {
+            background: #ff6b6b;
+        }
+
+        .sticker-board-content {
+            position: relative;
+            min-height: 250px;
+            padding: 10px;
+        }
+
+        .sticker-board-empty {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        .sticker {
+            position: absolute;
+            width: 180px;
+            background: #1e2a45;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: grab;
+            user-select: none;
+            transition: box-shadow 0.2s;
+            overflow: hidden;
+        }
+
+        .sticker:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+
+        .sticker.dragging-sticker {
+            opacity: 0.8;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            z-index: 100;
+            cursor: grabbing;
+        }
+
+        .sticker-color-bar {
+            height: 5px;
+            width: 100%;
+        }
+
+        .sticker-body {
+            padding: 10px;
+        }
+
+        .sticker-lp-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #eee;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sticker-status {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+
+        .sticker-info {
+            font-size: 0.75rem;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .sticker-info span {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sticker-memo {
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -1245,6 +1384,47 @@
                 <button class="btn-cancel" onclick="closeMemoModal()">취소</button>
                 <button class="btn-delete" id="deleteMemoBtn" onclick="deleteMemo()" style="display: none;">삭제</button>
                 <button class="btn-save" onclick="saveMemo()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticker Modal -->
+    <div class="modal-overlay hidden" id="stickerModal">
+        <div class="modal">
+            <h3 id="stickerModalTitle">새 스티커</h3>
+            <div class="form-group">
+                <label>LP명</label>
+                <input type="text" id="stickerLpName" placeholder="LP 기관명">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>상태</label>
+                    <select id="stickerStatus">
+                        <option value="contacted">컨택</option>
+                        <option value="interested">관심</option>
+                        <option value="negotiating">협상</option>
+                        <option value="committed">확약</option>
+                        <option value="paid">납입</option>
+                        <option value="dropped">드랍</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>금액 (억)</label>
+                    <input type="number" id="stickerAmount" placeholder="0" min="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>담당자</label>
+                <input type="text" id="stickerAssignee" placeholder="담당자 이름">
+            </div>
+            <div class="form-group">
+                <label>메모</label>
+                <textarea id="stickerMemo" placeholder="메모를 입력하세요"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeStickerModal()">취소</button>
+                <button class="btn-delete" id="deleteStickerBtn" onclick="deleteSticker()" style="display: none;">삭제</button>
+                <button class="btn-save" onclick="saveSticker()">저장</button>
             </div>
         </div>
     </div>
@@ -2407,7 +2587,7 @@
 
             bodyHtml += '</div>';
  
-            container.innerHTML = headerHtml + bodyHtml;
+            container.innerHTML = headerHtml + bodyHtml + renderStickerBoard();
             
             // Draw dependencies after render
             setTimeout(drawDependencies, 0);
@@ -3371,6 +3551,237 @@
                     `Daywalker - ${total}건의 마감 알림`,
                     lines.join('\n')
                 );
+            }
+        }
+
+        // ========== LP Sticker Board ==========
+        const STICKER_STATUS_COLORS = {
+            contacted: '#6b7280',
+            interested: '#3b82f6',
+            negotiating: '#f59e0b',
+            committed: '#10b981',
+            paid: '#8b5cf6',
+            dropped: '#ef4444'
+        };
+
+        const STICKER_STATUS_LABELS = {
+            contacted: '컨택',
+            interested: '관심',
+            negotiating: '협상',
+            committed: '확약',
+            paid: '납입',
+            dropped: '드랍'
+        };
+
+        function renderStickerBoard() {
+            const project = getCurrentProject();
+            if (!project) return '';
+
+            const stickers = project.stickers || [];
+
+            let html = `
+                <div class="sticker-board" id="stickerBoard">
+                    <div class="sticker-board-header">
+                        <h4>LP 보드</h4>
+                        <button onclick="openStickerModal()">+ 스티커 추가</button>
+                    </div>
+                    <div class="sticker-board-content" id="stickerBoardContent"
+                         oncontextmenu="event.preventDefault()">
+            `;
+
+            if (stickers.length === 0) {
+                html += '<div class="sticker-board-empty">스티커를 추가하여 LP를 관리하세요</div>';
+            } else {
+                stickers.forEach(s => {
+                    const color = STICKER_STATUS_COLORS[s.status] || '#6b7280';
+                    const label = STICKER_STATUS_LABELS[s.status] || s.status;
+                    html += `
+                        <div class="sticker" id="sticker-${s.id}"
+                             style="left: ${s.x || 10}px; top: ${s.y || 10}px;"
+                             onmousedown="startStickerDrag(event, '${s.id}')"
+                             ondblclick="openStickerModal('${s.id}')"
+                             oncontextmenu="event.preventDefault(); event.stopPropagation(); deleteStickerConfirm('${s.id}');">
+                            <div class="sticker-color-bar" style="background: ${color};"></div>
+                            <div class="sticker-body">
+                                <div class="sticker-lp-name">${escapeHtml(s.lpName)}</div>
+                                <div class="sticker-status" style="background: ${color}22; color: ${color};">${label}</div>
+                                <div class="sticker-info">
+                                    ${s.amount ? `<span>💰 ${s.amount}억</span>` : ''}
+                                    ${s.assignee ? `<span>👤 ${escapeHtml(s.assignee)}</span>` : ''}
+                                </div>
+                                ${s.memo ? `<div class="sticker-memo">${escapeHtml(s.memo)}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += '</div></div>';
+            return html;
+        }
+
+        // Sticker drag
+        let _stickerDrag = null;
+
+        function startStickerDrag(e, stickerId) {
+            if (e.button !== 0) return; // left click only
+            e.preventDefault();
+            const el = document.getElementById(`sticker-${stickerId}`);
+            if (!el) return;
+            const board = document.getElementById('stickerBoardContent');
+            if (!board) return;
+
+            const boardRect = board.getBoundingClientRect();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const origLeft = parseInt(el.style.left) || 0;
+            const origTop = parseInt(el.style.top) || 0;
+
+            el.classList.add('dragging-sticker');
+
+            _stickerDrag = { stickerId, el, board, boardRect, startX, startY, origLeft, origTop };
+
+            document.addEventListener('mousemove', onStickerDragMove);
+            document.addEventListener('mouseup', onStickerDragEnd);
+        }
+
+        function onStickerDragMove(e) {
+            if (!_stickerDrag) return;
+            const { el, boardRect, startX, startY, origLeft, origTop } = _stickerDrag;
+            let newLeft = origLeft + (e.clientX - startX);
+            let newTop = origTop + (e.clientY - startY);
+
+            // Clamp to board bounds
+            newLeft = Math.max(0, Math.min(newLeft, boardRect.width - 190));
+            newTop = Math.max(0, Math.min(newTop, Math.max(boardRect.height - 140, 0)));
+
+            el.style.left = newLeft + 'px';
+            el.style.top = newTop + 'px';
+        }
+
+        function onStickerDragEnd(e) {
+            if (!_stickerDrag) return;
+            const { stickerId, el } = _stickerDrag;
+            el.classList.remove('dragging-sticker');
+
+            // Save position
+            const project = getCurrentProject();
+            if (project && project.stickers) {
+                const sticker = project.stickers.find(s => s.id === stickerId);
+                if (sticker) {
+                    sticker.x = parseInt(el.style.left) || 0;
+                    sticker.y = parseInt(el.style.top) || 0;
+                    sticker.updatedAt = new Date().toISOString();
+                    saveState();
+                }
+            }
+
+            _stickerDrag = null;
+            document.removeEventListener('mousemove', onStickerDragMove);
+            document.removeEventListener('mouseup', onStickerDragEnd);
+        }
+
+        // Sticker modal
+        function openStickerModal(stickerId) {
+            const modal = document.getElementById('stickerModal');
+            const title = document.getElementById('stickerModalTitle');
+            const deleteBtn = document.getElementById('deleteStickerBtn');
+
+            if (stickerId) {
+                const project = getCurrentProject();
+                const sticker = (project.stickers || []).find(s => s.id === stickerId);
+                if (!sticker) return;
+
+                title.textContent = 'LP 스티커 수정';
+                document.getElementById('stickerLpName').value = sticker.lpName || '';
+                document.getElementById('stickerStatus').value = sticker.status || 'contacted';
+                document.getElementById('stickerAmount').value = sticker.amount || '';
+                document.getElementById('stickerAssignee').value = sticker.assignee || '';
+                document.getElementById('stickerMemo').value = sticker.memo || '';
+                deleteBtn.style.display = 'block';
+                state.editingStickerId = stickerId;
+            } else {
+                title.textContent = '새 LP 스티커';
+                document.getElementById('stickerLpName').value = '';
+                document.getElementById('stickerStatus').value = 'contacted';
+                document.getElementById('stickerAmount').value = '';
+                document.getElementById('stickerAssignee').value = '';
+                document.getElementById('stickerMemo').value = '';
+                deleteBtn.style.display = 'none';
+                state.editingStickerId = null;
+            }
+
+            modal.classList.remove('hidden');
+            document.getElementById('stickerLpName').focus();
+        }
+
+        function closeStickerModal() {
+            document.getElementById('stickerModal').classList.add('hidden');
+            state.editingStickerId = null;
+        }
+
+        function saveSticker() {
+            const lpName = document.getElementById('stickerLpName').value.trim();
+            if (!lpName) {
+                alert('LP명을 입력하세요');
+                return;
+            }
+
+            const project = getCurrentProject();
+            if (!project.stickers) project.stickers = [];
+
+            const data = {
+                lpName,
+                status: document.getElementById('stickerStatus').value,
+                amount: parseInt(document.getElementById('stickerAmount').value) || 0,
+                assignee: document.getElementById('stickerAssignee').value.trim(),
+                memo: document.getElementById('stickerMemo').value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (state.editingStickerId) {
+                const sticker = project.stickers.find(s => s.id === state.editingStickerId);
+                if (sticker) {
+                    Object.assign(sticker, data);
+                }
+            } else {
+                // Place new sticker with slight random offset to avoid stacking
+                const offsetX = 10 + (project.stickers.length % 5) * 190;
+                const offsetY = 10 + Math.floor(project.stickers.length / 5) * 145;
+                project.stickers.push({
+                    id: generateId(),
+                    ...data,
+                    x: offsetX,
+                    y: offsetY,
+                    createdAt: new Date().toISOString()
+                });
+            }
+
+            saveState();
+            renderGantt();
+            closeStickerModal();
+        }
+
+        function deleteSticker() {
+            if (!state.editingStickerId) return;
+            if (!confirm('이 스티커를 삭제하시겠습니까?')) return;
+
+            const project = getCurrentProject();
+            if (project && project.stickers) {
+                project.stickers = project.stickers.filter(s => s.id !== state.editingStickerId);
+                saveState();
+                renderGantt();
+            }
+            closeStickerModal();
+        }
+
+        function deleteStickerConfirm(stickerId) {
+            if (!confirm('이 스티커를 삭제하시겠습니까?')) return;
+            const project = getCurrentProject();
+            if (project && project.stickers) {
+                project.stickers = project.stickers.filter(s => s.id !== stickerId);
+                saveState();
+                renderGantt();
             }
         }
 
