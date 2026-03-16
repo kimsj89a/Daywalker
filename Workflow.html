@@ -1186,7 +1186,7 @@
             padding: 10px;
         }
 
-        .sticker-lp-name {
+        .sticker-title {
             font-size: 0.85rem;
             font-weight: 700;
             color: #eee;
@@ -1393,29 +1393,55 @@
         <div class="modal">
             <h3 id="stickerModalTitle">새 스티커</h3>
             <div class="form-group">
-                <label>LP명</label>
-                <input type="text" id="stickerLpName" placeholder="LP 기관명">
+                <label>제목</label>
+                <input type="text" id="stickerTitle" placeholder="LP명 또는 업무 제목">
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>상태</label>
-                    <select id="stickerStatus">
-                        <option value="contacted">컨택</option>
-                        <option value="interested">관심</option>
-                        <option value="negotiating">협상</option>
-                        <option value="committed">확약</option>
-                        <option value="paid">납입</option>
-                        <option value="dropped">드랍</option>
+                    <label>카테고리</label>
+                    <select id="stickerCategory">
+                        <option value="lp">LP</option>
+                        <option value="deal">딜 프로세스</option>
+                        <option value="note">일반 메모</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>상태</label>
+                    <select id="stickerStatus">
+                        <optgroup label="LP 상태">
+                            <option value="contacted">컨택</option>
+                            <option value="interested">관심</option>
+                            <option value="negotiating">협상</option>
+                            <option value="committed">확약</option>
+                            <option value="paid">납입</option>
+                            <option value="dropped">드랍</option>
+                        </optgroup>
+                        <optgroup label="딜 프로세스">
+                            <option value="sourcing">소싱</option>
+                            <option value="reviewing">검토 중</option>
+                            <option value="dd">실사(DD)</option>
+                            <option value="negotiation">협상</option>
+                            <option value="signing">계약 체결</option>
+                            <option value="closed">클로징</option>
+                            <option value="passed">패스</option>
+                        </optgroup>
+                        <optgroup label="기타">
+                            <option value="todo">할 일</option>
+                            <option value="in_progress">진행 중</option>
+                            <option value="done">완료</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group">
                     <label>금액 (억)</label>
                     <input type="number" id="stickerAmount" placeholder="0" min="0">
                 </div>
-            </div>
-            <div class="form-group">
-                <label>담당자</label>
-                <input type="text" id="stickerAssignee" placeholder="담당자 이름">
+                <div class="form-group">
+                    <label>담당자</label>
+                    <input type="text" id="stickerAssignee" placeholder="담당자 이름">
+                </div>
             </div>
             <div class="form-group">
                 <label>메모</label>
@@ -3554,24 +3580,31 @@
             }
         }
 
-        // ========== LP Sticker Board ==========
+        // ========== Sticker Board ==========
         const STICKER_STATUS_COLORS = {
-            contacted: '#6b7280',
-            interested: '#3b82f6',
-            negotiating: '#f59e0b',
-            committed: '#10b981',
-            paid: '#8b5cf6',
-            dropped: '#ef4444'
+            // LP
+            contacted: '#6b7280', interested: '#3b82f6', negotiating: '#f59e0b',
+            committed: '#10b981', paid: '#8b5cf6', dropped: '#ef4444',
+            // Deal process
+            sourcing: '#06b6d4', reviewing: '#3b82f6', dd: '#f59e0b',
+            negotiation: '#f97316', signing: '#10b981', closed: '#8b5cf6', passed: '#ef4444',
+            // General
+            todo: '#6b7280', in_progress: '#3b82f6', done: '#10b981'
         };
 
         const STICKER_STATUS_LABELS = {
-            contacted: '컨택',
-            interested: '관심',
-            negotiating: '협상',
-            committed: '확약',
-            paid: '납입',
-            dropped: '드랍'
+            // LP
+            contacted: '컨택', interested: '관심', negotiating: '협상',
+            committed: '확약', paid: '납입', dropped: '드랍',
+            // Deal process
+            sourcing: '소싱', reviewing: '검토 중', dd: '실사(DD)',
+            negotiation: '협상', signing: '계약 체결', closed: '클로징', passed: '패스',
+            // General
+            todo: '할 일', in_progress: '진행 중', done: '완료'
         };
+
+        const STICKER_CATEGORY_LABELS = { lp: 'LP', deal: '딜', note: '메모' };
+        const STICKER_CATEGORY_ICONS = { lp: '👥', deal: '💼', note: '📌' };
 
         function renderStickerBoard() {
             const project = getCurrentProject();
@@ -3582,7 +3615,7 @@
             let html = `
                 <div class="sticker-board" id="stickerBoard">
                     <div class="sticker-board-header">
-                        <h4>LP 보드</h4>
+                        <h4>스티커 보드</h4>
                         <button onclick="openStickerModal()">+ 스티커 추가</button>
                     </div>
                     <div class="sticker-board-content" id="stickerBoardContent"
@@ -3590,11 +3623,13 @@
             `;
 
             if (stickers.length === 0) {
-                html += '<div class="sticker-board-empty">스티커를 추가하여 LP를 관리하세요</div>';
+                html += '<div class="sticker-board-empty">스티커를 추가하여 LP, 딜, 메모를 관리하세요</div>';
             } else {
                 stickers.forEach(s => {
                     const color = STICKER_STATUS_COLORS[s.status] || '#6b7280';
                     const label = STICKER_STATUS_LABELS[s.status] || s.status;
+                    const catIcon = STICKER_CATEGORY_ICONS[s.category] || '📌';
+                    const title = s.title || s.lpName || ''; // backward compat with lpName
                     html += `
                         <div class="sticker" id="sticker-${s.id}"
                              style="left: ${s.x || 10}px; top: ${s.y || 10}px;"
@@ -3603,7 +3638,7 @@
                              oncontextmenu="event.preventDefault(); event.stopPropagation(); deleteStickerConfirm('${s.id}');">
                             <div class="sticker-color-bar" style="background: ${color};"></div>
                             <div class="sticker-body">
-                                <div class="sticker-lp-name">${escapeHtml(s.lpName)}</div>
+                                <div class="sticker-title">${catIcon} ${escapeHtml(title)}</div>
                                 <div class="sticker-status" style="background: ${color}22; color: ${color};">${label}</div>
                                 <div class="sticker-info">
                                     ${s.amount ? `<span>💰 ${s.amount}억</span>` : ''}
@@ -3684,7 +3719,7 @@
         // Sticker modal
         function openStickerModal(stickerId) {
             const modal = document.getElementById('stickerModal');
-            const title = document.getElementById('stickerModalTitle');
+            const titleEl = document.getElementById('stickerModalTitle');
             const deleteBtn = document.getElementById('deleteStickerBtn');
 
             if (stickerId) {
@@ -3692,8 +3727,9 @@
                 const sticker = (project.stickers || []).find(s => s.id === stickerId);
                 if (!sticker) return;
 
-                title.textContent = 'LP 스티커 수정';
-                document.getElementById('stickerLpName').value = sticker.lpName || '';
+                titleEl.textContent = '스티커 수정';
+                document.getElementById('stickerTitle').value = sticker.title || sticker.lpName || '';
+                document.getElementById('stickerCategory').value = sticker.category || 'lp';
                 document.getElementById('stickerStatus').value = sticker.status || 'contacted';
                 document.getElementById('stickerAmount').value = sticker.amount || '';
                 document.getElementById('stickerAssignee').value = sticker.assignee || '';
@@ -3701,8 +3737,9 @@
                 deleteBtn.style.display = 'block';
                 state.editingStickerId = stickerId;
             } else {
-                title.textContent = '새 LP 스티커';
-                document.getElementById('stickerLpName').value = '';
+                titleEl.textContent = '새 스티커';
+                document.getElementById('stickerTitle').value = '';
+                document.getElementById('stickerCategory').value = 'lp';
                 document.getElementById('stickerStatus').value = 'contacted';
                 document.getElementById('stickerAmount').value = '';
                 document.getElementById('stickerAssignee').value = '';
@@ -3712,7 +3749,7 @@
             }
 
             modal.classList.remove('hidden');
-            document.getElementById('stickerLpName').focus();
+            document.getElementById('stickerTitle').focus();
         }
 
         function closeStickerModal() {
@@ -3721,9 +3758,9 @@
         }
 
         function saveSticker() {
-            const lpName = document.getElementById('stickerLpName').value.trim();
-            if (!lpName) {
-                alert('LP명을 입력하세요');
+            const title = document.getElementById('stickerTitle').value.trim();
+            if (!title) {
+                alert('제목을 입력하세요');
                 return;
             }
 
@@ -3731,7 +3768,8 @@
             if (!project.stickers) project.stickers = [];
 
             const data = {
-                lpName,
+                title,
+                category: document.getElementById('stickerCategory').value,
                 status: document.getElementById('stickerStatus').value,
                 amount: parseInt(document.getElementById('stickerAmount').value) || 0,
                 assignee: document.getElementById('stickerAssignee').value.trim(),
