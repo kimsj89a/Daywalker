@@ -195,11 +195,38 @@
         }
 
         .gantt-area {
-            flex: 1;
             overflow: auto;
             padding: 20px;
             cursor: grab;
-            min-height: 0;
+            min-height: 80px;
+            flex: none;
+            height: 50%;
+        }
+
+        .split-handle {
+            height: 6px;
+            background: #0f3460;
+            cursor: row-resize;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 20;
+            transition: background 0.2s;
+        }
+
+        .split-handle:hover, .split-handle.dragging {
+            background: #e94560;
+        }
+
+        .split-handle::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 2px;
+            background: #888;
+            border-radius: 1px;
         }
 
         .gantt-area.panning {
@@ -1102,8 +1129,8 @@
         /* ===== Sticker Board ===== */
         .sticker-board {
             position: relative;
-            height: 280px;
-            flex-shrink: 0;
+            flex: 1;
+            min-height: 80px;
             background: #12192e;
             background-image: radial-gradient(circle, #1a2240 1px, transparent 1px);
             background-size: 20px 20px;
@@ -1298,6 +1325,7 @@
                         <div class="gantt-container" id="ganttContainer" style="display: none;"></div>
                         <div class="dashboard-grid" id="dashboardGrid" style="display: none;"></div>
                     </div>
+                    <div class="split-handle" id="splitHandle"></div>
                     <div id="stickerBoardSlot"></div>
                 </div>
  
@@ -3614,6 +3642,40 @@
                 );
             }
         }
+
+        // ========== Split Handle ==========
+        (function initSplitHandle() {
+            const handle = document.getElementById('splitHandle');
+            const ganttArea = document.getElementById('ganttArea');
+            const split = document.getElementById('ganttSplit');
+            let dragging = false;
+
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                dragging = true;
+                handle.classList.add('dragging');
+                document.body.style.cursor = 'row-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                const splitRect = split.getBoundingClientRect();
+                const offset = e.clientY - splitRect.top;
+                const minH = 80;
+                const maxH = splitRect.height - 80 - 6; // 6 = handle height
+                const newH = Math.max(minH, Math.min(offset, maxH));
+                ganttArea.style.height = newH + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!dragging) return;
+                dragging = false;
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            });
+        })();
 
         // ========== Sticker Board ==========
         const STICKER_STATUS_COLORS = {
