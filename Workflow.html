@@ -186,12 +186,20 @@
             overflow: hidden;
         }
  
-        /* Gantt Chart Area */
+        /* Gantt Chart Area — split layout */
+        .gantt-split {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
         .gantt-area {
             flex: 1;
             overflow: auto;
             padding: 20px;
             cursor: grab;
+            min-height: 0;
         }
 
         .gantt-area.panning {
@@ -1094,13 +1102,15 @@
         /* ===== Sticker Board ===== */
         .sticker-board {
             position: relative;
-            min-height: 300px;
-            margin-top: 2px;
+            height: 280px;
+            flex-shrink: 0;
             background: #12192e;
             background-image: radial-gradient(circle, #1a2240 1px, transparent 1px);
             background-size: 20px 20px;
             border-top: 2px solid #0f3460;
-            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .sticker-board-header {
@@ -1141,7 +1151,8 @@
 
         .sticker-board-content {
             position: relative;
-            min-height: 250px;
+            flex: 1;
+            overflow: auto;
             padding: 10px;
         }
 
@@ -1277,14 +1288,17 @@
             </header>
  
             <div class="content-wrapper">
-                <div class="gantt-area" id="ganttArea">
-                    <div class="empty-state" id="emptyState">
-                        <div class="empty-state-icon">📊</div>
-                        <h3>프로젝트를 선택하거나 새로 만드세요</h3>
-                        <p>왼쪽 사이드바에서 프로젝트를 선택하거나<br>새 프로젝트를 추가하세요</p>
+                <div class="gantt-split" id="ganttSplit">
+                    <div class="gantt-area" id="ganttArea">
+                        <div class="empty-state" id="emptyState">
+                            <div class="empty-state-icon">📊</div>
+                            <h3>프로젝트를 선택하거나 새로 만드세요</h3>
+                            <p>왼쪽 사이드바에서 프로젝트를 선택하거나<br>새 프로젝트를 추가하세요</p>
+                        </div>
+                        <div class="gantt-container" id="ganttContainer" style="display: none;"></div>
+                        <div class="dashboard-grid" id="dashboardGrid" style="display: none;"></div>
                     </div>
-                    <div class="gantt-container" id="ganttContainer" style="display: none;"></div>
-                    <div class="dashboard-grid" id="dashboardGrid" style="display: none;"></div>
+                    <div id="stickerBoardSlot"></div>
                 </div>
  
                 <!-- Memo Panel -->
@@ -2486,9 +2500,8 @@
             const searchInput = document.getElementById('searchInput');
             const dashboardGrid = document.getElementById('dashboardGrid');
  
-            // Clean up sticker board on view switch
-            const oldSticker = document.getElementById('stickerBoard');
-            if (oldSticker) oldSticker.remove();
+            // Clear sticker board on view switch
+            document.getElementById('stickerBoardSlot').innerHTML = '';
 
             if (!project || project.type === 'separator') {
                 container.style.display = 'none';
@@ -2525,8 +2538,7 @@
                 `;
                 emptyState.style.display = 'flex';
                 // Still show sticker board even without tasks
-                const ganttArea2 = document.getElementById('ganttArea');
-                ganttArea2.insertAdjacentHTML('beforeend', renderStickerBoard());
+                document.getElementById('stickerBoardSlot').innerHTML = renderStickerBoard();
                 return;
             }
 
@@ -2635,11 +2647,8 @@
  
             container.innerHTML = headerHtml + bodyHtml;
 
-            // Render sticker board outside gantt scroll area
-            let stickerEl = document.getElementById('stickerBoard');
-            if (stickerEl) stickerEl.remove();
-            const ganttArea = document.getElementById('ganttArea');
-            ganttArea.insertAdjacentHTML('beforeend', renderStickerBoard());
+            // Render sticker board in the split slot
+            document.getElementById('stickerBoardSlot').innerHTML = renderStickerBoard();
             
             // Draw dependencies after render
             setTimeout(drawDependencies, 0);
