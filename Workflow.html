@@ -198,13 +198,12 @@
             overflow: auto;
             padding: 20px;
             cursor: grab;
-            min-height: 80px;
-            flex: none;
-            height: 50%;
+            min-height: 100px;
+            flex: 3;
         }
 
         .split-handle {
-            height: 6px;
+            height: 8px;
             background: #0f3460;
             cursor: row-resize;
             flex-shrink: 0;
@@ -3648,6 +3647,7 @@
             const handle = document.getElementById('splitHandle');
             const ganttArea = document.getElementById('ganttArea');
             const split = document.getElementById('ganttSplit');
+            const slot = document.getElementById('stickerBoardSlot');
             let dragging = false;
 
             handle.addEventListener('mousedown', (e) => {
@@ -3661,11 +3661,19 @@
             document.addEventListener('mousemove', (e) => {
                 if (!dragging) return;
                 const splitRect = split.getBoundingClientRect();
+                const totalH = splitRect.height - 8; // 8 = handle height
                 const offset = e.clientY - splitRect.top;
-                const minH = 80;
-                const maxH = splitRect.height - 80 - 6; // 6 = handle height
-                const newH = Math.max(minH, Math.min(offset, maxH));
-                ganttArea.style.height = newH + 'px';
+                const minH = 100;
+                const ganttH = Math.max(minH, Math.min(offset, totalH - minH));
+                const stickerH = totalH - ganttH;
+                // Switch from flex to explicit px
+                ganttArea.style.flex = 'none';
+                ganttArea.style.height = ganttH + 'px';
+                const board = slot.firstElementChild;
+                if (board) {
+                    board.style.flex = 'none';
+                    board.style.height = stickerH + 'px';
+                }
             });
 
             document.addEventListener('mouseup', () => {
