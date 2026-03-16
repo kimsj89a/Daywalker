@@ -397,7 +397,7 @@
             font-size: 0.75rem;
             color: white;
             transition: opacity 0.2s;
-            overflow: visible;
+            overflow: hidden;
             white-space: nowrap;
         }
  
@@ -1270,6 +1270,7 @@
                     </div>
                     <button onclick="exportToCSV()">📊 CSV 내보내기</button>
                     <button onclick="toggleMemo()">📝 메모</button>
+                    <button id="hideCompletedBtn" onclick="toggleHideCompleted()">👁 완료 숨김</button>
                     <button onclick="openTaskModal()">+ 태스크 추가</button>
                 </div>
             </header>
@@ -1531,6 +1532,7 @@
             editingTaskId: null,
             editingMemoId: null,
             filterCompleted: false,
+            hideCompleted: false,
             highlightTaskId: null,
             contextMenuTarget: null,
             collapsedGroups: {},
@@ -2232,7 +2234,7 @@
                 } else {
                     completeBtn.innerHTML = '✅ 완료';
                 }
-                [completeBtn, editBtn].forEach(el => el.style.display = 'flex');
+                [completeBtn, editBtn, dupBtn, deleteBtn].forEach(el => el.style.display = 'flex');
             } else if (type === 'project') {
                 [editBtn, deleteBtn].forEach(el => el.style.display = 'flex');
             } else if (type === 'background') {
@@ -2357,6 +2359,14 @@
         }
 
         // Memo Functions
+        function toggleHideCompleted() {
+            state.hideCompleted = !state.hideCompleted;
+            const btn = document.getElementById('hideCompletedBtn');
+            btn.textContent = state.hideCompleted ? '👁 완료 표시' : '👁 완료 숨김';
+            btn.style.background = state.hideCompleted ? '#e94560' : '';
+            renderGantt();
+        }
+
         function toggleMemo() {
             const panel = document.getElementById('memoPanel');
             panel.classList.toggle('hidden');
@@ -2547,7 +2557,9 @@
                     </svg>
             `;
  
-            project.tasks.forEach(task => {
+            const visibleTasks = state.hideCompleted ? project.tasks.filter(t => t.progress !== 100) : project.tasks;
+
+            visibleTasks.forEach(task => {
                 const taskStart = new Date(task.startDate);
                 const taskEnd = new Date(task.endDate);
                 const startOffset = Math.floor((taskStart - startDate) / (1000 * 60 * 60 * 24));
