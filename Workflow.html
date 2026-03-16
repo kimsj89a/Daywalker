@@ -372,6 +372,7 @@
             flex: 1;
             display: flex;
             position: relative;
+            overflow: hidden;
         }
  
         .gantt-cell-day {
@@ -2485,6 +2486,10 @@
             const searchInput = document.getElementById('searchInput');
             const dashboardGrid = document.getElementById('dashboardGrid');
  
+            // Clean up sticker board on view switch
+            const oldSticker = document.getElementById('stickerBoard');
+            if (oldSticker) oldSticker.remove();
+
             if (!project || project.type === 'separator') {
                 container.style.display = 'none';
                 emptyState.style.display = 'none';
@@ -2519,9 +2524,12 @@
                     <p>새 태스크를 추가하여 프로젝트 일정을 관리하세요</p>
                 `;
                 emptyState.style.display = 'flex';
+                // Still show sticker board even without tasks
+                const ganttArea2 = document.getElementById('ganttArea');
+                ganttArea2.insertAdjacentHTML('beforeend', renderStickerBoard());
                 return;
             }
- 
+
             emptyState.style.display = 'none';
             container.style.display = 'block';
  
@@ -2625,7 +2633,13 @@
 
             bodyHtml += '</div>';
  
-            container.innerHTML = headerHtml + bodyHtml + renderStickerBoard();
+            container.innerHTML = headerHtml + bodyHtml;
+
+            // Render sticker board outside gantt scroll area
+            let stickerEl = document.getElementById('stickerBoard');
+            if (stickerEl) stickerEl.remove();
+            const ganttArea = document.getElementById('ganttArea');
+            ganttArea.insertAdjacentHTML('beforeend', renderStickerBoard());
             
             // Draw dependencies after render
             setTimeout(drawDependencies, 0);
