@@ -8,16 +8,56 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <style>
+        :root {
+            /* Colors */
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-surface: #0f3460;
+            --bg-card: #1e2a45;
+            --bg-hover: #1a2744;
+            --bg-input: #0d1b36;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --text-muted: #888;
+            --text-dim: #555;
+            --accent-red: #e94560;
+            --accent-red-hover: #ff6b6b;
+            --accent-blue: #0f3460;
+            --border-color: #0f3460;
+            --border-light: rgba(255, 255, 255, 0.06);
+
+            /* Z-Index Layers */
+            --z-base: 1;
+            --z-sticky: 5;
+            --z-header: 10;
+            --z-split-handle: 20;
+            --z-dropdown: 50;
+            --z-dragging: 100;
+            --z-modal-backdrop: 1000;
+            --z-modal: 1001;
+            --z-context-menu: 2000;
+            --z-toast: 10000;
+            --z-preview: 9999;
+
+            /* Spacing */
+            --sidebar-width: 280px;
+            --header-height: auto;
+
+            /* Transitions */
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
- 
+
         body {
             font-family: 'Malgun Gothic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
         }
  
@@ -212,11 +252,11 @@
 
         .split-handle {
             height: 8px;
-            background: #0f3460;
+            background: var(--border-color);
             cursor: row-resize;
             flex-shrink: 0;
             position: relative;
-            z-index: 20;
+            z-index: var(--z-split-handle);
             transition: background 0.2s;
         }
 
@@ -604,7 +644,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: var(--z-modal-backdrop);
         }
  
         .modal-overlay.hidden {
@@ -998,7 +1038,7 @@
             padding: 5px 0;
             min-width: 150px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            z-index: 2000;
+            z-index: var(--z-context-menu);
             display: none;
         }
         .context-menu-item {
@@ -1310,7 +1350,7 @@
             top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
-            z-index: 9999;
+            z-index: var(--z-preview);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1758,14 +1798,33 @@
         });
  
         // ===== 데이터 저장/로드 (Firebase + localStorage) =====
+        // 프로젝트 데이터 스키마 정규화
+        function _normalizeProjects(data) {
+            if (!data) return [];
+            if (!Array.isArray(data)) data = Object.values(data);
+            return data.map(p => ({
+                id: p.id || generateId(),
+                name: p.name || '이름 없는 프로젝트',
+                type: p.type || 'project',
+                tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
+                memos: Array.isArray(p.memos) ? p.memos : (p.memos ? Object.values(p.memos) : []),
+                stickers: Array.isArray(p.stickers) ? p.stickers : [],
+                ...p
+            })).filter(p => p.id); // id 없는 항목 제거
+        }
+
         async function loadState() {
             // 1) 개인 UI 상태는 항상 localStorage에서 로드
-            const localUI = localStorage.getItem('ganttLocalUI');
-            if (localUI) {
-                const parsed = JSON.parse(localUI);
-                state.currentProjectId = parsed.currentProjectId || null;
-                state.filterCompleted = parsed.filterCompleted || false;
-                state.collapsedGroups = parsed.collapsedGroups || {};
+            try {
+                const localUI = localStorage.getItem('ganttLocalUI');
+                if (localUI) {
+                    const parsed = JSON.parse(localUI);
+                    state.currentProjectId = parsed.currentProjectId || null;
+                    state.filterCompleted = parsed.filterCompleted || false;
+                    state.collapsedGroups = parsed.collapsedGroups || {};
+                }
+            } catch (e) {
+                console.warn('UI 상태 로드 실패, 기본값 사용:', e.message);
             }
 
             // 2) Electron 로컬 파일 저장 모드 (우선)
@@ -1774,11 +1833,7 @@
                     const raw = await window.electronAPI.loadLocalData('projects.json');
                     if (raw) {
                         const data = JSON.parse(raw);
-                        state.projects = (data || []).map(p => ({
-                            ...p,
-                            tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
-                            memos: Array.isArray(p.memos) ? p.memos : (p.memos ? Object.values(p.memos) : [])
-                        }));
+                        state.projects = _normalizeProjects(data);
                         setSyncStatus('synced');
                         renderProjects();
                         renderGantt();
@@ -1795,12 +1850,7 @@
                         const snapshot = await _firebaseRef.once('value');
                         let data = snapshot.val();
                         if (data) {
-                            if (!Array.isArray(data)) data = Object.values(data);
-                            state.projects = data.map(p => ({
-                                ...p,
-                                tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
-                                memos: Array.isArray(p.memos) ? p.memos : (p.memos ? Object.values(p.memos) : [])
-                            }));
+                            state.projects = _normalizeProjects(data);
                             migrated = true;
                             console.log('Firebase → 로컬 파일 마이그레이션');
                         }
@@ -1810,7 +1860,7 @@
                         const saved = localStorage.getItem('ganttManagerState');
                         if (saved) {
                             const parsed = JSON.parse(saved);
-                            state.projects = parsed.projects || [];
+                            state.projects = _normalizeProjects(parsed.projects);
                             migrated = true;
                             console.log('localStorage → 로컬 파일 마이그레이션');
                         }
@@ -1835,19 +1885,20 @@
             if (firebaseEnabled && _firebaseRef) {
                 _firebaseRef.on('value', (snapshot) => {
                     _syncingFromFirebase = true;
-                    let data = snapshot.val();
-                    if (data && !Array.isArray(data)) {
-                        data = Object.values(data);
+                    try {
+                        let data = snapshot.val();
+                        state.projects = _normalizeProjects(data);
+                        setSyncStatus('synced');
+                        renderProjects();
+                        renderGantt();
+                    } catch (e) {
+                        console.error('Firebase 데이터 파싱 실패:', e.message);
+                        setSyncStatus('offline');
                     }
-                    state.projects = (data || []).map(p => ({
-                        ...p,
-                        tasks: Array.isArray(p.tasks) ? p.tasks : (p.tasks ? Object.values(p.tasks) : []),
-                        memos: Array.isArray(p.memos) ? p.memos : (p.memos ? Object.values(p.memos) : [])
-                    }));
-                    setSyncStatus('synced');
-                    renderProjects();
-                    renderGantt();
                     _syncingFromFirebase = false;
+                }, (error) => {
+                    console.error('Firebase 읽기 오류:', error.message);
+                    setSyncStatus('offline');
                 });
 
                 firebase.database().ref('.info/connected').on('value', (snap) => {
@@ -1855,17 +1906,95 @@
                 });
             } else {
                 setSyncStatus('offline');
-                const saved = localStorage.getItem('ganttManagerState');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    state.projects = parsed.projects || [];
+                try {
+                    const saved = localStorage.getItem('ganttManagerState');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        state.projects = _normalizeProjects(parsed.projects);
+                    }
+                } catch (e) {
+                    console.error('localStorage 데이터 파싱 실패:', e.message);
+                    state.projects = [];
                 }
                 renderProjects();
                 renderGantt();
             }
         }
 
+        // Debounced save — 빈번한 호출 최적화
+        let _saveTimer = null;
         function saveState() {
+            if (_saveTimer) clearTimeout(_saveTimer);
+            _saveTimer = setTimeout(_doSaveState, 300);
+        }
+        function saveStateImmediate() {
+            if (_saveTimer) clearTimeout(_saveTimer);
+            _doSaveState();
+        }
+
+        function _safeLocalStorageSet(key, value) {
+            try {
+                localStorage.setItem(key, value);
+            } catch (e) {
+                console.error('localStorage 저장 실패 (용량 초과 가능):', e.message);
+                setSyncStatus('offline');
+                _showToast('저장 공간이 부족합니다. 데이터를 내보내기 해주세요.', 'error');
+            }
+        }
+
+        function _showToast(message, type = 'info') {
+            const existing = document.querySelector('.dw-toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'dw-toast';
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px; z-index: 10000;
+                padding: 12px 20px; border-radius: 10px; font-size: 0.85rem;
+                color: #fff; backdrop-filter: blur(8px); animation: fadeIn 0.2s ease;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+                background: ${type === 'error' ? 'rgba(233,69,96,0.9)' : type === 'success' ? 'rgba(46,204,113,0.9)' : 'rgba(15,52,96,0.9)'};
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // Undo 시스템 (최근 삭제 작업 1회 복구)
+        let _undoStack = [];
+        const MAX_UNDO = 10;
+
+        function _pushUndo(label, snapshotProjects) {
+            _undoStack.push({
+                label,
+                projects: JSON.parse(JSON.stringify(snapshotProjects)),
+                timestamp: Date.now()
+            });
+            if (_undoStack.length > MAX_UNDO) _undoStack.shift();
+        }
+
+        function undo() {
+            if (_undoStack.length === 0) {
+                _showToast('되돌릴 작업이 없습니다', 'info');
+                return;
+            }
+            const entry = _undoStack.pop();
+            state.projects = entry.projects;
+            saveStateImmediate();
+            renderProjects();
+            renderGantt();
+            _showToast(`"${entry.label}" 작업을 되돌렸습니다`, 'success');
+        }
+
+        // Ctrl+Z 단축키
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.target.closest('input, textarea, select, [contenteditable]')) {
+                e.preventDefault();
+                undo();
+            }
+        });
+
+        function _doSaveState() {
+            _saveTimer = null;
             // 0) 태스크 lastModified 갱신
             const _now = new Date().toISOString();
             state.projects.forEach(p => {
@@ -1876,7 +2005,7 @@
             });
 
             // 1) 개인 UI 상태 → localStorage
-            localStorage.setItem('ganttLocalUI', JSON.stringify({
+            _safeLocalStorageSet('ganttLocalUI', JSON.stringify({
                 currentProjectId: state.currentProjectId,
                 filterCompleted: state.filterCompleted,
                 collapsedGroups: state.collapsedGroups
@@ -1899,12 +2028,12 @@
                 }).catch((err) => {
                     console.error('Firebase 저장 실패:', err);
                     setSyncStatus('offline');
-                    localStorage.setItem('ganttManagerState', JSON.stringify({
+                    _safeLocalStorageSet('ganttManagerState', JSON.stringify({
                         projects: state.projects
                     }));
                 });
             } else {
-                localStorage.setItem('ganttManagerState', JSON.stringify({
+                _safeLocalStorageSet('ganttManagerState', JSON.stringify({
                     projects: state.projects,
                     currentProjectId: state.currentProjectId,
                     filterCompleted: state.filterCompleted,
@@ -1912,13 +2041,18 @@
                 }));
             }
         }
- 
+
+        // 검색 디바운스
+        let _searchTimer = null;
         function handleSearch(query) {
-            state.searchQuery = query;
-            renderProjects();
-            if (state.currentProjectId) {
-                renderGantt();
-            }
+            if (_searchTimer) clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => {
+                state.searchQuery = query;
+                renderProjects();
+                if (state.currentProjectId) {
+                    renderGantt();
+                }
+            }, 200);
         }
 
         // Project Functions
@@ -2058,16 +2192,30 @@
                 try {
                     const importedState = JSON.parse(e.target.result);
                     if (!importedState.projects) throw new Error("Invalid format");
-                    
+
                     if (confirm('현재 데이터를 덮어쓰고 가져온 데이터로 복원하시겠습니까?')) {
-                        state = importedState;
-                        saveState();
+                        // 현재 데이터 백업 (undo stack + 자동 다운로드)
+                        _pushUndo('데이터 가져오기 전 백업', state.projects);
+                        try {
+                            const backup = JSON.stringify({ projects: state.projects }, null, 2);
+                            const blob = new Blob([backup], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `daywalker-backup-${new Date().toISOString().slice(0,10)}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        } catch (_) { /* 백업 다운로드 실패해도 진행 */ }
+
+                        state.projects = _normalizeProjects(importedState.projects);
+                        state.currentProjectId = importedState.currentProjectId || null;
+                        saveStateImmediate();
                         renderProjects();
                         renderGantt();
-                        alert('데이터가 성공적으로 복원되었습니다.');
+                        _showToast('데이터가 성공적으로 복원되었습니다. 기존 데이터는 백업 파일로 저장됨', 'success');
                     }
                 } catch (err) {
-                    alert('파일 형식이 올바르지 않습니다.');
+                    alert('파일 형식이 올바르지 않습니다: ' + err.message);
                 }
                 input.value = ''; // Reset
             };
@@ -2195,20 +2343,25 @@
  
         function deleteProject() {
             if (!confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) return;
- 
+
+            const proj = state.projects.find(p => p.id === state.editingProjectId);
+            _pushUndo(`프로젝트 삭제: ${proj ? proj.name : ''}`, state.projects);
             state.projects = state.projects.filter(p => p.id !== state.editingProjectId);
             if (state.currentProjectId === state.editingProjectId) {
                 state.currentProjectId = state.projects.length > 0 ? state.projects[0].id : null;
             }
- 
+
             saveState();
             renderProjects();
             renderGantt();
             closeProjectModal();
+            _showToast('프로젝트가 삭제되었습니다. Ctrl+Z로 되돌리기', 'info');
         }
- 
+
         function deleteProjectById(id) {
             if (!confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) return;
+            const proj = state.projects.find(p => p.id === id);
+            _pushUndo(`프로젝트 삭제: ${proj ? proj.name : ''}`, state.projects);
             state.projects = state.projects.filter(p => p.id !== id);
             if (state.currentProjectId === id) {
                 state.currentProjectId = null;
@@ -2216,6 +2369,7 @@
             saveState();
             renderProjects();
             renderGantt();
+            _showToast('프로젝트가 삭제되었습니다. Ctrl+Z로 되돌리기', 'info');
         }
 
         function enableInlineEdit(element, field) {
@@ -2364,8 +2518,15 @@
                 alert('시작일과 종료일을 입력하세요');
                 return;
             }
- 
-            if (new Date(startDate) > new Date(endDate)) {
+
+            const parsedStart = new Date(startDate);
+            const parsedEnd = new Date(endDate);
+            if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+                alert('올바른 날짜 형식을 입력하세요');
+                return;
+            }
+
+            if (parsedStart > parsedEnd) {
                 alert('종료일은 시작일보다 늦어야 합니다');
                 return;
             }
@@ -2402,13 +2563,16 @@
  
         function deleteTask() {
             if (!confirm('정말로 이 태스크를 삭제하시겠습니까?')) return;
- 
+
             const project = getCurrentProject();
+            const task = project.tasks.find(t => t.id === state.editingTaskId);
+            _pushUndo(`태스크 삭제: ${task ? task.name : ''}`, state.projects);
             project.tasks = project.tasks.filter(t => t.id !== state.editingTaskId);
- 
+
             saveState();
             renderGantt();
             closeTaskModal();
+            _showToast('태스크가 삭제되었습니다. Ctrl+Z로 되돌리기', 'info');
         }
  
         // Context Menu Functions
@@ -4091,9 +4255,12 @@
             if (!confirm('이 스티커를 삭제하시겠습니까?')) return;
             const project = getCurrentProject();
             if (project && project.stickers) {
+                const sticker = project.stickers.find(s => s.id === stickerId);
+                _pushUndo(`스티커 삭제: ${sticker ? sticker.title : ''}`, state.projects);
                 project.stickers = project.stickers.filter(s => s.id !== stickerId);
                 saveState();
                 renderGantt();
+                _showToast('스티커가 삭제되었습니다. Ctrl+Z로 되돌리기', 'info');
             }
         }
 

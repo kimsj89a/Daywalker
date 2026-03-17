@@ -257,16 +257,37 @@ function setupIPC() {
   const dataDir = path.join(app.getPath('userData'), 'data');
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
+  // 허용 파일명 화이트리스트 (경로 순회 방지)
+  const ALLOWED_FILES = ['projects.json', 'google-token.json', 'memos.json', 'settings.json'];
+  function validateFilename(filename) {
+    const base = path.basename(filename);
+    return ALLOWED_FILES.includes(base) ? base : null;
+  }
+
   ipcMain.handle('load-local-data', (event, filename) => {
-    const filePath = path.join(dataDir, filename);
-    if (!fs.existsSync(filePath)) return null;
-    return fs.readFileSync(filePath, 'utf-8');
+    const safe = validateFilename(filename);
+    if (!safe) return null;
+    try {
+      const filePath = path.join(dataDir, safe);
+      if (!fs.existsSync(filePath)) return null;
+      return fs.readFileSync(filePath, 'utf-8');
+    } catch (e) {
+      console.error('load-local-data error:', e.message);
+      return null;
+    }
   });
 
   ipcMain.handle('save-local-data', (event, filename, data) => {
-    const filePath = path.join(dataDir, filename);
-    fs.writeFileSync(filePath, data, 'utf-8');
-    return true;
+    const safe = validateFilename(filename);
+    if (!safe) return false;
+    try {
+      const filePath = path.join(dataDir, safe);
+      fs.writeFileSync(filePath, data, 'utf-8');
+      return true;
+    } catch (e) {
+      console.error('save-local-data error:', e.message);
+      return false;
+    }
   });
 
   ipcMain.handle('get-data-path', () => dataDir);
