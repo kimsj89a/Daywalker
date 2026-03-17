@@ -706,6 +706,82 @@
             resize: vertical;
         }
  
+        /* Dependency dropdown */
+        .dep-dropdown {
+            position: relative;
+        }
+
+        .dep-dropdown-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border: 1px solid #0f3460;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #ccc;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .dep-dropdown-trigger:hover {
+            border-color: #e94560;
+        }
+
+        .dep-dropdown-arrow {
+            font-size: 0.8rem;
+            color: #888;
+            transition: transform 0.2s;
+        }
+
+        .dep-dropdown.open .dep-dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dep-dropdown-list {
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid #0f3460;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            background: #12192e;
+        }
+
+        .dep-dropdown-list.hidden {
+            display: none;
+        }
+
+        .dep-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            color: #ccc;
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+
+        .dep-dropdown-item:hover {
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .dep-dropdown-item input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #e94560;
+            cursor: pointer;
+        }
+
+        .dep-dropdown-item label {
+            display: inline !important;
+            margin: 0 !important;
+            color: #ddd !important;
+            font-size: 0.85rem !important;
+            cursor: pointer;
+        }
+
         .form-row {
             display: flex;
             gap: 15px;
@@ -1625,7 +1701,13 @@
             </div>
             <div class="form-group">
                 <label>선행 태스크 (의존성)</label>
-                <div class="checkbox-list" id="taskDependencies"></div>
+                <div class="dep-dropdown" id="depDropdown">
+                    <div class="dep-dropdown-trigger" onclick="toggleDepDropdown()">
+                        <span class="dep-dropdown-text" id="depDropdownText">선택하세요</span>
+                        <span class="dep-dropdown-arrow">▾</span>
+                    </div>
+                    <div class="dep-dropdown-list hidden" id="taskDependencies"></div>
+                </div>
             </div>
             <div class="form-group">
                 <label>색상</label>
@@ -2501,21 +2583,51 @@
             const project = getCurrentProject();
             const currentTask = taskId ? project.tasks.find(t => t.id === taskId) : null;
             const currentDeps = currentTask ? (currentTask.dependencies || []) : [];
-            
-            depContainer.innerHTML = project.tasks
-                .filter(t => t.id !== taskId) // Exclude self
-                .map(t => `
-                    <div style="margin-bottom: 5px;">
-                        <input type="checkbox" id="dep_${t.id}" value="${t.id}" 
-                            ${currentDeps.includes(t.id) ? 'checked' : ''}>
-                        <label for="dep_${t.id}" style="display:inline; color:#eee;">${escapeHtml(t.name)}</label>
-                    </div>
-                `).join('');
+
+            const depList = document.getElementById('taskDependencies');
+            const depDropdown = document.getElementById('depDropdown');
+            depDropdown.classList.remove('open');
+            depList.classList.add('hidden');
+
+            const otherTasks = project.tasks.filter(t => t.id !== taskId);
+            depContainer.innerHTML = otherTasks.map(t => `
+                <div class="dep-dropdown-item" onclick="this.querySelector('input').click();">
+                    <input type="checkbox" id="dep_${t.id}" value="${t.id}"
+                        ${currentDeps.includes(t.id) ? 'checked' : ''}
+                        onclick="event.stopPropagation(); updateDepDropdownText();">
+                    <label for="dep_${t.id}" onclick="event.stopPropagation();">${escapeHtml(t.name)}</label>
+                </div>
+            `).join('');
+
+            updateDepDropdownText();
  
             modal.classList.remove('hidden');
             document.getElementById('taskName').focus();
         }
  
+        function toggleDepDropdown() {
+            const dropdown = document.getElementById('depDropdown');
+            const list = document.getElementById('taskDependencies');
+            dropdown.classList.toggle('open');
+            list.classList.toggle('hidden');
+        }
+
+        function updateDepDropdownText() {
+            const checked = document.querySelectorAll('#taskDependencies input:checked');
+            const textEl = document.getElementById('depDropdownText');
+            if (checked.length === 0) {
+                textEl.textContent = '없음';
+                textEl.style.color = '#888';
+            } else {
+                const names = Array.from(checked).map(cb => {
+                    const label = cb.parentElement.querySelector('label');
+                    return label ? label.textContent.trim() : '';
+                }).filter(Boolean);
+                textEl.textContent = names.length <= 2 ? names.join(', ') : `${names.length}개 선택됨`;
+                textEl.style.color = '#e94560';
+            }
+        }
+
         function closeTaskModal() {
             document.getElementById('taskModal').classList.add('hidden');
             state.editingTaskId = null;
