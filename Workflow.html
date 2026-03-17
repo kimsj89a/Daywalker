@@ -239,14 +239,15 @@
             padding: 20px;
             cursor: grab;
             min-height: 100px;
-            flex: 1;
+            flex: none;
+            max-height: 60vh;
         }
 
         #stickerBoardSlot {
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 200px;
+            min-height: 250px;
             overflow: hidden;
         }
 
@@ -1468,6 +1469,30 @@
 
         .sticker-preview-close:hover {
             background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Sticker board context menu */
+        .sticker-ctx-item {
+            padding: 9px 16px;
+            font-size: 0.82rem;
+            color: #ccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.12s;
+        }
+
+        .sticker-ctx-item:hover {
+            background: rgba(233, 69, 96, 0.15);
+            color: #fff;
+        }
+
+        .sticker-ctx-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .sticker-ctx-item:last-child {
+            border-radius: 0 0 8px 8px;
         }
     </style>
 </head>
@@ -4056,7 +4081,7 @@
                         <button onclick="openStickerModal()">+ 스티커 추가</button>
                     </div>
                     <div class="sticker-board-content" id="stickerBoardContent"
-                         oncontextmenu="event.preventDefault()">
+                         oncontextmenu="showStickerBoardContextMenu(event)">
             `;
 
             if (stickers.length === 0) {
@@ -4193,6 +4218,8 @@
         function closeStickerModal() {
             document.getElementById('stickerModal').classList.add('hidden');
             state.editingStickerId = null;
+            state._stickerDropX = null;
+            state._stickerDropY = null;
         }
 
         function saveSticker() {
@@ -4221,9 +4248,11 @@
                     Object.assign(sticker, data);
                 }
             } else {
-                // Place new sticker with slight random offset to avoid stacking
-                const offsetX = 10 + (project.stickers.length % 4) * 215;
-                const offsetY = 10 + Math.floor(project.stickers.length / 4) * 155;
+                // 우클릭으로 위치 지정했으면 해당 좌표 사용, 아니면 그리드 배치
+                const dropX = state._stickerDropX;
+                const dropY = state._stickerDropY;
+                const offsetX = (dropX != null) ? dropX : 10 + (project.stickers.length % 4) * 215;
+                const offsetY = (dropY != null) ? dropY : 10 + Math.floor(project.stickers.length / 4) * 155;
                 project.stickers.push({
                     id: generateId(),
                     ...data,
@@ -4233,6 +4262,8 @@
                 });
             }
 
+            state._stickerDropX = null;
+            state._stickerDropY = null;
             saveState();
             renderGantt();
             closeStickerModal();
@@ -4265,6 +4296,75 @@
         }
 
         // Sticker preview popup (double-click)
+        // 스티커 보드 우클릭 컨텍스트 메뉴
+        function showStickerBoardContextMenu(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // 기존 메뉴 제거
+            const existing = document.querySelector('.sticker-context-menu');
+            if (existing) existing.remove();
+
+            const board = document.getElementById('stickerBoardContent');
+            if (!board) return;
+            const boardRect = board.getBoundingClientRect();
+            const clickX = e.clientX - boardRect.left + board.scrollLeft;
+            const clickY = e.clientY - boardRect.top + board.scrollTop;
+
+            const menu = document.createElement('div');
+            menu.className = 'sticker-context-menu';
+            menu.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                background: var(--bg-secondary, #16213e);
+                border: 1px solid var(--border-color, #0f3460);
+                border-radius: 8px;
+                padding: 4px 0;
+                min-width: 160px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+                z-index: var(--z-context-menu, 2000);
+                animation: fadeIn 0.1s ease;
+            `;
+
+            menu.innerHTML = `
+                <div class="sticker-ctx-item" onclick="openStickerModalAt(${Math.round(clickX)}, ${Math.round(clickY)}); this.closest('.sticker-context-menu').remove();">
+                    <span style="margin-right: 8px;">📌</span> 새 스티커 추가
+                </div>
+                <div class="sticker-ctx-item" onclick="openStickerModalAt(${Math.round(clickX)}, ${Math.round(clickY)}, 'lp'); this.closest('.sticker-context-menu').remove();">
+                    <span style="margin-right: 8px;">👥</span> LP 스티커 추가
+                </div>
+                <div class="sticker-ctx-item" onclick="openStickerModalAt(${Math.round(clickX)}, ${Math.round(clickY)}, 'deal'); this.closest('.sticker-context-menu').remove();">
+                    <span style="margin-right: 8px;">💼</span> 딜 스티커 추가
+                </div>
+            `;
+
+            document.body.appendChild(menu);
+
+            // 화면 밖으로 나가면 위치 조정
+            const rect = menu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
+            if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
+
+            // 다른 곳 클릭 시 닫기
+            setTimeout(() => {
+                document.addEventListener('click', function _close() {
+                    menu.remove();
+                    document.removeEventListener('click', _close);
+                }, { once: true });
+            }, 0);
+        }
+
+        // 특정 위치에 스티커 추가 모달 열기
+        function openStickerModalAt(x, y, category) {
+            state._stickerDropX = x;
+            state._stickerDropY = y;
+            openStickerModal();
+            if (category) {
+                document.getElementById('stickerCategory').value = category;
+            }
+        }
+
         function showStickerPreview(stickerId) {
             const project = getCurrentProject();
             if (!project || !project.stickers) return;
