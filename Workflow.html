@@ -199,7 +199,15 @@
             padding: 20px;
             cursor: grab;
             min-height: 100px;
-            flex: 3;
+            flex: 1;
+        }
+
+        #stickerBoardSlot {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            overflow: hidden;
         }
 
         .split-handle {
@@ -1129,7 +1137,7 @@
         .sticker-board {
             position: relative;
             flex: 1;
-            min-height: 80px;
+            min-height: 200px;
             background: #12192e;
             background-image: radial-gradient(circle, #1a2240 1px, transparent 1px);
             background-size: 20px 20px;
