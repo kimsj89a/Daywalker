@@ -1639,8 +1639,19 @@
 
         /* Header */
         body.light-mode .header { background: #fff; border-bottom: 1px solid #e4e6ea; }
-        body.light-mode .header button { color: #555; background: #f0f1f4; border: 1px solid #dcdee3; }
-        body.light-mode .header button:hover { background: #e4e6ea; }
+        body.light-mode .header h2 { color: #1c1e21; }
+        body.light-mode .header-actions button {
+            background: #f0f1f4;
+            color: #444;
+            border: 1px solid #dcdee3;
+        }
+        body.light-mode .header-actions button:hover {
+            background: #e4e6ea;
+            color: #222;
+        }
+        body.light-mode #hideCompletedBtn[style*="background"] {
+            color: #fff;
+        }
 
         /* Gantt Area */
         body.light-mode .gantt-area { background: #fafbfc; }
