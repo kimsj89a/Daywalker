@@ -1421,6 +1421,15 @@
             line-height: 1.5;
         }
 
+        /* height가 지정된 스티커는 메모 전체 표시 */
+        .sticker[style*="height"] .sticker-memo {
+            display: block;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         /* Sticker resize handle */
         .sticker-resize {
             position: absolute;
