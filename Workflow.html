@@ -4209,7 +4209,7 @@
                              style="left: ${s.x || 10}px; top: ${s.y || 10}px;"
                              onmousedown="startStickerDrag(event, '${s.id}')"
                              ondblclick="showStickerPreview('${s.id}')"
-                             oncontextmenu="event.preventDefault(); event.stopPropagation(); deleteStickerConfirm('${s.id}');">
+                             oncontextmenu="showStickerContextMenu(event, '${s.id}')">
                             <div class="sticker-color-bar" style="background: linear-gradient(90deg, ${color}, ${color}88);"></div>
                             <div class="sticker-body">
                                 <div class="sticker-title">${catIcon} ${escapeHtml(title)}</div>
@@ -4409,6 +4409,58 @@
 
         // Sticker preview popup (double-click)
         // 스티커 보드 우클릭 컨텍스트 메뉴
+        // 개별 스티커 우클릭 메뉴
+        function showStickerContextMenu(e, stickerId) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const existing = document.querySelector('.sticker-context-menu');
+            if (existing) existing.remove();
+
+            const menu = document.createElement('div');
+            menu.className = 'sticker-context-menu';
+            menu.style.cssText = `
+                position: fixed;
+                left: ${e.clientX}px;
+                top: ${e.clientY}px;
+                background: var(--bg-secondary, #16213e);
+                border: 1px solid var(--border-color, #0f3460);
+                border-radius: 8px;
+                padding: 4px 0;
+                min-width: 140px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+                z-index: var(--z-context-menu, 2000);
+                animation: fadeIn 0.1s ease;
+            `;
+
+            menu.innerHTML = `
+                <div class="sticker-ctx-item" onclick="this.closest('.sticker-context-menu').remove(); openStickerModal('${stickerId}');">
+                    <span style="margin-right: 8px;">✏️</span> 수정
+                </div>
+                <div class="sticker-ctx-item" onclick="this.closest('.sticker-context-menu').remove(); showStickerPreview('${stickerId}');">
+                    <span style="margin-right: 8px;">👁</span> 상세 보기
+                </div>
+                <div style="height: 1px; background: #0f3460; margin: 4px 0;"></div>
+                <div class="sticker-ctx-item" style="color: #e94560;" onclick="this.closest('.sticker-context-menu').remove(); deleteStickerConfirm('${stickerId}');">
+                    <span style="margin-right: 8px;">🗑</span> 삭제
+                </div>
+            `;
+
+            document.body.appendChild(menu);
+
+            const rect = menu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
+            if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
+
+            setTimeout(() => {
+                document.addEventListener('click', function _close() {
+                    menu.remove();
+                    document.removeEventListener('click', _close);
+                }, { once: true });
+            }, 0);
+        }
+
+        // 스티커 보드 빈 영역 우클릭 메뉴
         function showStickerBoardContextMenu(e) {
             e.preventDefault();
             e.stopPropagation();
