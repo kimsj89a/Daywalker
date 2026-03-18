@@ -1395,6 +1395,15 @@
             text-overflow: ellipsis;
         }
 
+        .sticker-company {
+            font-size: 0.72rem;
+            color: #8892a8;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .sticker-memo {
             font-size: 0.72rem;
             color: #6b7a94;
@@ -1406,6 +1415,33 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             line-height: 1.5;
+        }
+
+        /* Sticker resize handle */
+        .sticker-resize {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 14px;
+            height: 14px;
+            cursor: nwse-resize;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .sticker:hover .sticker-resize {
+            opacity: 0.5;
+        }
+
+        .sticker-resize::after {
+            content: '';
+            position: absolute;
+            right: 3px;
+            bottom: 3px;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid #888;
+            border-bottom: 2px solid #888;
         }
 
         .sticker-peek-hint {
@@ -1570,6 +1606,106 @@
         .sticker-ctx-item:last-child {
             border-radius: 0 0 8px 8px;
         }
+
+        /* ===== Light Mode ===== */
+        body.light-mode {
+            background: #f5f5f7;
+            color: #1a1a2e;
+        }
+        body.light-mode .sidebar {
+            background: #fff;
+            border-right: 1px solid #e0e0e5;
+        }
+        body.light-mode .sidebar h1 { color: #1a1a2e; }
+        body.light-mode .header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e5;
+        }
+        body.light-mode .header button { color: #444; }
+        body.light-mode .header button:hover { background: #eee; }
+        body.light-mode .gantt-area { background: #fafafa; }
+        body.light-mode .gantt-task-cell {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            color: #222;
+        }
+        body.light-mode .gantt-task-cell .task-name { color: #222; }
+        body.light-mode .gantt-timeline-cell {
+            background: #fafafa;
+            border-bottom: 1px solid #eee;
+        }
+        body.light-mode .gantt-header-day {
+            background: #f0f0f3;
+            color: #666;
+            border-bottom: 1px solid #ddd;
+        }
+        body.light-mode .gantt-day-cell { border-right: 1px solid #eee; }
+        body.light-mode .sticker-board {
+            background: #f0f0f3;
+            background-image: linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
+            border-top: 2px solid #ddd;
+        }
+        body.light-mode .sticker-board-header {
+            background: rgba(240,240,243,0.95);
+            border-bottom: 1px solid #ddd;
+        }
+        body.light-mode .sticker-board-header h4 { color: #888; }
+        body.light-mode .sticker {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        body.light-mode .sticker:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            border-color: #bbb;
+        }
+        body.light-mode .sticker-title { color: #222; }
+        body.light-mode .sticker-company { color: #666; }
+        body.light-mode .sticker-info { color: #666; }
+        body.light-mode .sticker-memo { color: #888; border-top: 1px solid #eee; }
+        body.light-mode .modal-overlay { background: rgba(0,0,0,0.3); }
+        body.light-mode .modal {
+            background: #fff;
+            color: #222;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+        }
+        body.light-mode .form-group label { color: #666; }
+        body.light-mode .form-group input,
+        body.light-mode .form-group textarea,
+        body.light-mode .form-group select {
+            background: #f5f5f7;
+            border-color: #ddd;
+            color: #222;
+        }
+        body.light-mode .memo-panel { background: #fff; border-left: 1px solid #e0e0e5; }
+        body.light-mode .add-project-btn { background: #eee; color: #444; }
+        body.light-mode .add-project-btn:hover { background: #e0e0e5; }
+        body.light-mode .project-item { color: #333; }
+        body.light-mode .project-item:hover { background: #f0f0f3; }
+        body.light-mode .project-item.active { background: #e8ecf4; }
+        body.light-mode .search-bar input {
+            background: #f5f5f7;
+            border: 1px solid #ddd;
+            color: #222;
+        }
+        body.light-mode .split-handle { background: #ddd; }
+        body.light-mode .split-handle:hover { background: #e94560; }
+        body.light-mode .dep-dropdown-trigger { background: #f5f5f7; border-color: #ddd; color: #444; }
+        body.light-mode .dep-dropdown-list { background: #fff; border-color: #ddd; }
+        body.light-mode .dep-dropdown-item { color: #444; }
+        body.light-mode .dep-dropdown-item label { color: #333 !important; }
+        body.light-mode .context-menu { background: #fff; border-color: #ddd; }
+        body.light-mode .context-menu-item { color: #333; }
+        body.light-mode .context-menu-item:hover { background: #f0f0f3; }
+        body.light-mode .sticker-preview-card { background: #fff; border-color: #ddd; }
+        body.light-mode .sticker-preview-title { color: #222; }
+        body.light-mode .sticker-preview-info { color: #666; }
+        body.light-mode .sticker-preview-memo { background: #f5f5f7; border-color: #eee; color: #444; }
+        body.light-mode .sticker-preview-actions { border-top: 1px solid #eee; }
+        body.light-mode .sticker-preview-edit { background: #e8ecf4; color: #0f3460; }
+        body.light-mode .sticker-preview-close { background: #f0f0f3; color: #666; }
     </style>
 </head>
 <body>
@@ -1586,6 +1722,7 @@
             <div class="project-list" id="projectList"></div>
             <div class="sidebar-actions">
                 <button class="add-project-btn sidebar-btn" id="alwaysOnTopBtn" onclick="toggleAlwaysOnTop()" style="display:none;">📌 항상 위에 표시</button>
+                <button class="add-project-btn sidebar-btn" onclick="toggleTheme()" id="themeToggleBtn">☀️ 라이트 모드</button>
                 <button class="add-project-btn sidebar-btn" onclick="exportData()">💾 데이터 내보내기</button>
                 <button class="add-project-btn sidebar-btn" onclick="triggerImport()">📂 데이터 가져오기</button>
                 <div class="trash-zone" ondragover="handleDragOver(event)" ondrop="handleTrashDrop(event)">
@@ -1745,9 +1882,15 @@
     <div class="modal-overlay hidden" id="stickerModal">
         <div class="modal">
             <h3 id="stickerModalTitle">새 스티커</h3>
-            <div class="form-group">
-                <label>제목</label>
-                <input type="text" id="stickerTitle" placeholder="LP명 또는 업무 제목">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>제목</label>
+                    <input type="text" id="stickerTitle" placeholder="LP명 또는 업무 제목">
+                </div>
+                <div class="form-group">
+                    <label>회사명</label>
+                    <input type="text" id="stickerCompany" placeholder="회사명">
+                </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
@@ -1777,6 +1920,12 @@
                             <option value="signing">계약 체결</option>
                             <option value="closed">클로징</option>
                             <option value="passed">패스</option>
+                        </optgroup>
+                        <optgroup label="Q&A">
+                            <option value="qa_sent">질의 발송</option>
+                            <option value="qa_received">답변 수신</option>
+                            <option value="qa_reviewing">답변 검토</option>
+                            <option value="qa_done">Q&A 완료</option>
                         </optgroup>
                         <optgroup label="기타">
                             <option value="todo">할 일</option>
@@ -2865,6 +3014,22 @@
         }
 
         // Memo Functions
+        // Theme toggle
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-mode');
+            const btn = document.getElementById('themeToggleBtn');
+            btn.textContent = isLight ? '🌙 다크 모드' : '☀️ 라이트 모드';
+            localStorage.setItem('daywalker-theme', isLight ? 'light' : 'dark');
+        }
+        // Restore theme on load
+        if (localStorage.getItem('daywalker-theme') === 'light') {
+            document.body.classList.add('light-mode');
+            document.addEventListener('DOMContentLoaded', () => {
+                const btn = document.getElementById('themeToggleBtn');
+                if (btn) btn.textContent = '🌙 다크 모드';
+            });
+        }
+
         function toggleHideCompleted() {
             state.hideCompleted = !state.hideCompleted;
             const btn = document.getElementById('hideCompletedBtn');
@@ -4162,6 +4327,8 @@
             // Deal process
             sourcing: '#06b6d4', reviewing: '#3b82f6', dd: '#f59e0b',
             negotiation: '#f97316', signing: '#10b981', closed: '#8b5cf6', passed: '#ef4444',
+            // Q&A
+            qa_sent: '#f59e0b', qa_received: '#3b82f6', qa_reviewing: '#8b5cf6', qa_done: '#10b981',
             // General
             todo: '#6b7280', in_progress: '#3b82f6', done: '#10b981'
         };
@@ -4173,6 +4340,8 @@
             // Deal process
             sourcing: '소싱', reviewing: '검토 중', dd: '실사(DD)',
             negotiation: '협상', signing: '계약 체결', closed: '클로징', passed: '패스',
+            // Q&A
+            qa_sent: '질의 발송', qa_received: '답변 수신', qa_reviewing: '답변 검토', qa_done: 'Q&A 완료',
             // General
             todo: '할 일', in_progress: '진행 중', done: '완료'
         };
@@ -4206,13 +4375,14 @@
                     const title = s.title || s.lpName || ''; // backward compat with lpName
                     html += `
                         <div class="sticker" id="sticker-${s.id}"
-                             style="left: ${s.x || 10}px; top: ${s.y || 10}px;"
+                             style="left: ${s.x || 10}px; top: ${s.y || 10}px;${s.width ? ` width: ${s.width}px;` : ''}"
                              onmousedown="startStickerDrag(event, '${s.id}')"
                              ondblclick="showStickerPreview('${s.id}')"
                              oncontextmenu="showStickerContextMenu(event, '${s.id}')">
                             <div class="sticker-color-bar" style="background: linear-gradient(90deg, ${color}, ${color}88);"></div>
                             <div class="sticker-body">
                                 <div class="sticker-title">${catIcon} ${escapeHtml(title)}</div>
+                                ${s.company ? `<div class="sticker-company">🏢 ${escapeHtml(s.company)}</div>` : ''}
                                 <div class="sticker-status" style="background: ${color}18; color: ${color}; border: 1px solid ${color}33;">${label}</div>
                                 <div class="sticker-info">
                                     ${s.amount ? `<span>💰 ${s.amount}억</span>` : ''}
@@ -4221,6 +4391,7 @@
                                 ${s.memo ? `<div class="sticker-memo">${escapeHtml(s.memo)}</div>` : ''}
                             </div>
                             <div class="sticker-peek-hint">더블클릭하여 상세 보기</div>
+                            <div class="sticker-resize" onmousedown="startStickerResize(event, '${s.id}')"></div>
                         </div>
                     `;
                 });
@@ -4291,6 +4462,43 @@
             document.removeEventListener('mouseup', onStickerDragEnd);
         }
 
+        // Sticker resize
+        let _stickerResize = null;
+        function startStickerResize(e, stickerId) {
+            e.preventDefault();
+            e.stopPropagation();
+            const el = document.getElementById(`sticker-${stickerId}`);
+            if (!el) return;
+            const startX = e.clientX;
+            const origW = el.offsetWidth;
+            _stickerResize = { stickerId, el, startX, origW };
+            document.addEventListener('mousemove', onStickerResizeMove);
+            document.addEventListener('mouseup', onStickerResizeEnd);
+        }
+
+        function onStickerResizeMove(e) {
+            if (!_stickerResize) return;
+            const { el, startX, origW } = _stickerResize;
+            const newW = Math.max(140, origW + (e.clientX - startX));
+            el.style.width = newW + 'px';
+        }
+
+        function onStickerResizeEnd() {
+            if (!_stickerResize) return;
+            const { stickerId, el } = _stickerResize;
+            const project = getCurrentProject();
+            if (project && project.stickers) {
+                const sticker = project.stickers.find(s => s.id === stickerId);
+                if (sticker) {
+                    sticker.width = el.offsetWidth;
+                    saveState();
+                }
+            }
+            _stickerResize = null;
+            document.removeEventListener('mousemove', onStickerResizeMove);
+            document.removeEventListener('mouseup', onStickerResizeEnd);
+        }
+
         // Sticker modal
         function openStickerModal(stickerId) {
             const modal = document.getElementById('stickerModal');
@@ -4304,6 +4512,7 @@
 
                 titleEl.textContent = '스티커 수정';
                 document.getElementById('stickerTitle').value = sticker.title || sticker.lpName || '';
+                document.getElementById('stickerCompany').value = sticker.company || '';
                 document.getElementById('stickerCategory').value = sticker.category || 'lp';
                 document.getElementById('stickerStatus').value = sticker.status || 'contacted';
                 document.getElementById('stickerAmount').value = sticker.amount || '';
@@ -4314,6 +4523,7 @@
             } else {
                 titleEl.textContent = '새 스티커';
                 document.getElementById('stickerTitle').value = '';
+                document.getElementById('stickerCompany').value = '';
                 document.getElementById('stickerCategory').value = 'lp';
                 document.getElementById('stickerStatus').value = 'contacted';
                 document.getElementById('stickerAmount').value = '';
@@ -4346,6 +4556,7 @@
 
             const data = {
                 title,
+                company: document.getElementById('stickerCompany').value.trim(),
                 category: document.getElementById('stickerCategory').value,
                 status: document.getElementById('stickerStatus').value,
                 amount: parseInt(document.getElementById('stickerAmount').value) || 0,
@@ -4555,6 +4766,7 @@
                             <span class="sticker-preview-badge" style="background: rgba(255,255,255,0.05); color: #8892a8;">${catLabel}</span>
                         </div>
                         <div class="sticker-preview-info">
+                            ${s.company ? `<div>🏢 회사: ${escapeHtml(s.company)}</div>` : ''}
                             ${s.amount ? `<div>💰 금액: ${s.amount}억</div>` : ''}
                             ${s.assignee ? `<div>👤 담당자: ${escapeHtml(s.assignee)}</div>` : ''}
                             ${s.createdAt ? `<div>📅 생성: ${new Date(s.createdAt).toLocaleDateString('ko-KR')}</div>` : ''}
