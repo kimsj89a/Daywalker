@@ -1335,6 +1335,8 @@
             user-select: none;
             transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .sticker:hover {
@@ -1359,6 +1361,8 @@
 
         .sticker-body {
             padding: 12px;
+            flex: 1;
+            overflow-y: auto;
         }
 
         .sticker-title {
@@ -4375,7 +4379,7 @@
                     const title = s.title || s.lpName || ''; // backward compat with lpName
                     html += `
                         <div class="sticker" id="sticker-${s.id}"
-                             style="left: ${s.x || 10}px; top: ${s.y || 10}px;${s.width ? ` width: ${s.width}px;` : ''}"
+                             style="left: ${s.x || 10}px; top: ${s.y || 10}px;${s.width ? ` width: ${s.width}px;` : ''}${s.height ? ` height: ${s.height}px;` : ''}"
                              onmousedown="startStickerDrag(event, '${s.id}')"
                              ondblclick="showStickerPreview('${s.id}')"
                              oncontextmenu="showStickerContextMenu(event, '${s.id}')">
@@ -4462,25 +4466,23 @@
             document.removeEventListener('mouseup', onStickerDragEnd);
         }
 
-        // Sticker resize
+        // Sticker resize (width + height)
         let _stickerResize = null;
         function startStickerResize(e, stickerId) {
             e.preventDefault();
             e.stopPropagation();
             const el = document.getElementById(`sticker-${stickerId}`);
             if (!el) return;
-            const startX = e.clientX;
-            const origW = el.offsetWidth;
-            _stickerResize = { stickerId, el, startX, origW };
+            _stickerResize = { stickerId, el, startX: e.clientX, startY: e.clientY, origW: el.offsetWidth, origH: el.offsetHeight };
             document.addEventListener('mousemove', onStickerResizeMove);
             document.addEventListener('mouseup', onStickerResizeEnd);
         }
 
         function onStickerResizeMove(e) {
             if (!_stickerResize) return;
-            const { el, startX, origW } = _stickerResize;
-            const newW = Math.max(140, origW + (e.clientX - startX));
-            el.style.width = newW + 'px';
+            const { el, startX, startY, origW, origH } = _stickerResize;
+            el.style.width = Math.max(140, origW + (e.clientX - startX)) + 'px';
+            el.style.height = Math.max(80, origH + (e.clientY - startY)) + 'px';
         }
 
         function onStickerResizeEnd() {
@@ -4491,6 +4493,7 @@
                 const sticker = project.stickers.find(s => s.id === stickerId);
                 if (sticker) {
                     sticker.width = el.offsetWidth;
+                    sticker.height = el.offsetHeight;
                     saveState();
                 }
             }
