@@ -1656,15 +1656,20 @@
         /* Gantt Area */
         body.light-mode .gantt-area { background: #fafbfc; }
         body.light-mode .gantt-container { background: #fff; }
+        body.light-mode .gantt-header { background: #f5f6f8 !important; border-bottom: 2px solid #e4e6ea; }
+        body.light-mode .gantt-task-header { background: #f5f6f8 !important; color: #e94560; border-right: 1px solid #e4e6ea; }
+        body.light-mode .gantt-timeline-header { background: #f5f6f8; }
         body.light-mode .gantt-header-day { background: #f5f6f8; color: #666; border-bottom: 1px solid #e4e6ea; border-right: 1px solid #eee; }
         body.light-mode .gantt-header-day.today { background: #fff0f0; color: #e94560; }
         body.light-mode .gantt-row { border-bottom: 1px solid #f0f1f4; }
         body.light-mode .gantt-row:hover { background: #f8f9fb; }
-        body.light-mode .gantt-row:hover .gantt-task-cell { background: #f0f1f4; }
-        body.light-mode .gantt-task-cell { background: #fff; border-bottom: 1px solid #f0f1f4; border-right: 1px solid #e4e6ea; }
+        body.light-mode .gantt-row:hover .gantt-task-cell { background: #f0f1f4 !important; }
+        body.light-mode .gantt-task-cell { background: #fff !important; border-bottom: 1px solid #f0f1f4; border-right: 1px solid #e4e6ea; color: #222; }
         body.light-mode .gantt-task-cell .task-name { color: #222; }
-        body.light-mode .gantt-task-cell.completed .task-name { color: #aaa; }
+        body.light-mode .gantt-task-cell .task-name:hover { color: #e94560; }
+        body.light-mode .gantt-task-cell.completed .task-name { color: #aaa; text-decoration: line-through; }
         body.light-mode .gantt-timeline-cell { background: #fafbfc; border-bottom: 1px solid #f0f1f4; }
+        body.light-mode .gantt-cell-day { border-right: 1px solid #f0f1f4; }
         body.light-mode .gantt-day-cell { border-right: 1px solid #f0f1f4; }
         body.light-mode .gantt-day-cell.today { background: rgba(233,69,96,0.06); }
         body.light-mode .gantt-day-cell.weekend { background: #f5f5f8; }
@@ -1672,6 +1677,7 @@
         body.light-mode .gantt-bar-text { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
         body.light-mode .add-task-row { color: #999; }
         body.light-mode .add-task-row:hover { background: #f5f6f8; color: #666; }
+        body.light-mode .gantt-row .gantt-task-cell[style*="color: #aaa"] { color: #999 !important; }
 
         /* Empty State */
         body.light-mode .empty-state { color: #888; }
@@ -1958,13 +1964,17 @@
             <h3 id="stickerModalTitle">새 스티커</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label>제목</label>
-                    <input type="text" id="stickerTitle" placeholder="LP명 또는 업무 제목">
-                </div>
-                <div class="form-group">
                     <label>회사명</label>
                     <input type="text" id="stickerCompany" placeholder="회사명">
                 </div>
+                <div class="form-group">
+                    <label>담당자</label>
+                    <input type="text" id="stickerAssignee" placeholder="담당자 이름">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>제목</label>
+                <input type="text" id="stickerTitle" placeholder="LP명 또는 업무 제목">
             </div>
             <div class="form-row">
                 <div class="form-group">
@@ -2009,19 +2019,20 @@
                     </select>
                 </div>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>금액 (억)</label>
-                    <input type="number" id="stickerAmount" placeholder="0" min="0">
-                </div>
-                <div class="form-group">
-                    <label>담당자</label>
-                    <input type="text" id="stickerAssignee" placeholder="담당자 이름">
-                </div>
+            <div class="form-group">
+                <label>금액 (억)</label>
+                <input type="number" id="stickerAmount" placeholder="0" min="0">
             </div>
             <div class="form-group">
                 <label>메모</label>
                 <textarea id="stickerMemo" placeholder="메모를 입력하세요"></textarea>
+            </div>
+            <div class="form-group" style="text-align: right;">
+                <button onclick="aiAutoFillSticker()" id="aiAutoFillBtn"
+                    style="background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s;">
+                    AI 자동 분류
+                </button>
+                <span id="aiAutoFillStatus" style="font-size: 0.75rem; color: #888; margin-left: 8px;"></span>
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeStickerModal()">취소</button>
@@ -4615,6 +4626,57 @@
             state.editingStickerId = null;
             state._stickerDropX = null;
             state._stickerDropY = null;
+        }
+
+        // AI 자동 분류
+        async function aiAutoFillSticker() {
+            const btn = document.getElementById('aiAutoFillBtn');
+            const statusEl = document.getElementById('aiAutoFillStatus');
+            const company = document.getElementById('stickerCompany').value.trim();
+            const assignee = document.getElementById('stickerAssignee').value.trim();
+            const title = document.getElementById('stickerTitle').value.trim();
+            const memo = document.getElementById('stickerMemo').value.trim();
+
+            if (!company && !title && !memo) {
+                statusEl.textContent = '회사명 또는 제목을 먼저 입력하세요';
+                statusEl.style.color = '#e94560';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '분류 중...';
+            statusEl.textContent = '';
+
+            try {
+                const res = await fetch('/api/ai/sticker-classify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ company, assignee, title, memo })
+                });
+
+                if (!res.ok) throw new Error('API 호출 실패');
+                const result = await res.json();
+
+                if (result.category) {
+                    document.getElementById('stickerCategory').value = result.category;
+                }
+                if (result.status) {
+                    document.getElementById('stickerStatus').value = result.status;
+                }
+                if (result.assignee_suggestion && !assignee) {
+                    document.getElementById('stickerAssignee').value = result.assignee_suggestion;
+                }
+
+                statusEl.textContent = '자동 분류 완료';
+                statusEl.style.color = '#10b981';
+            } catch (err) {
+                console.error('AI auto-fill error:', err);
+                statusEl.textContent = '분류 실패: ' + err.message;
+                statusEl.style.color = '#e94560';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'AI 자동 분류';
+            }
         }
 
         function saveSticker() {

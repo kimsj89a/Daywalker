@@ -185,5 +185,67 @@ app.post('/api/sync', async (req, res) => {
     }
 });
 
+// ========== AI Auto-Fill (Anthropic Claude) ==========
+app.post('/api/ai/sticker-classify', async (req, res) => {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
+
+    const { company, assignee, title, memo } = req.body;
+    const context = [company, assignee, title, memo].filter(Boolean).join(' / ');
+    if (!context.trim()) return res.status(400).json({ error: 'No input provided' });
+
+    try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 300,
+                messages: [{
+                    role: 'user',
+                    content: `You are a Korean VC/PE investment operations classifier. Given this sticker info, classify it.
+
+Input: "${context}"
+
+Return ONLY valid JSON (no markdown):
+{
+  "category": one of "lp" | "deal" | "note",
+  "status": one of "contacted"|"interested"|"negotiating"|"committed"|"paid"|"dropped"|"sourcing"|"reviewing"|"dd"|"negotiation"|"signing"|"closed"|"passed"|"qa_sent"|"qa_received"|"qa_reviewing"|"qa_done"|"todo"|"in_progress"|"done",
+  "assignee_suggestion": if assignee field is empty and you can infer a person name from context, suggest it. Otherwise null.
+}
+
+Rules:
+- If company name looks like a bank/securities/insurance/asset manager → category: "lp"
+- If it mentions deal/투자/검토/실사/DD/소싱 → category: "deal"
+- If it mentions Q&A/질의/답변 → pick appropriate qa_ status
+- Default to "note" / "todo" if unclear
+- Pick the most specific status that fits`
+                }]
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            return res.status(500).json({ error: 'Anthropic API error: ' + err });
+        }
+
+        const data = await response.json();
+        const text = data.content?.[0]?.text || '';
+        // Parse JSON from response (handle possible markdown wrapping)
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) return res.status(500).json({ error: 'Failed to parse AI response' });
+
+        const result = JSON.parse(jsonMatch[0]);
+        res.json(result);
+    } catch (err) {
+        console.error('AI classify error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ========== Start ==========
 app.listen(PORT, () => console.log(`Daywalker running on port ${PORT}`));
