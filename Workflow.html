@@ -2248,7 +2248,39 @@
                 }
             }
 
-            // 3) 비-Electron 환경 폴백 (Firebase → localStorage)
+            // 3) 비-Electron 환경: 서버 API → Firebase → localStorage 폴백
+            try {
+                const resp = await fetch('/api/projects');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
+                        state.projects = _normalizeProjects(data);
+                        setSyncStatus('synced');
+                        renderProjects();
+                        renderGantt();
+                        // Firebase 실시간 동기화도 유지
+                        if (firebaseEnabled && _firebaseRef) {
+                            _firebaseRef.on('value', (snapshot) => {
+                                _syncingFromFirebase = true;
+                                try {
+                                    let fbData = snapshot.val();
+                                    if (fbData) {
+                                        state.projects = _normalizeProjects(fbData);
+                                        renderProjects();
+                                        renderGantt();
+                                    }
+                                } catch (e) { console.warn('Firebase sync error:', e); }
+                                _syncingFromFirebase = false;
+                            });
+                        }
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('서버 API 로드 실패, 폴백 시도:', e.message);
+            }
+
+            // Firebase 폴백
             if (firebaseEnabled && _firebaseRef) {
                 _firebaseRef.on('value', (snapshot) => {
                     _syncingFromFirebase = true;
@@ -2272,6 +2304,7 @@
                     setSyncStatus(snap.val() === true ? 'synced' : 'offline');
                 });
             } else {
+                // localStorage 최종 폴백
                 setSyncStatus('offline');
                 try {
                     const saved = localStorage.getItem('ganttManagerState');
@@ -2387,24 +2420,31 @@
                         console.error('로컬 파일 저장 실패:', err);
                         setSyncStatus('offline');
                     });
-            } else if (firebaseEnabled && _firebaseRef && !_syncingFromFirebase) {
-                // 비-Electron 환경에서 Firebase 폴백
-                setSyncStatus('saving');
-                _firebaseRef.set(state.projects).then(() => {
-                    setSyncStatus('synced');
-                }).catch((err) => {
-                    console.error('Firebase 저장 실패:', err);
-                    setSyncStatus('offline');
-                    _safeLocalStorageSet('ganttManagerState', JSON.stringify({
-                        projects: state.projects
-                    }));
-                });
             } else {
+                // 비-Electron: 서버 API에 저장 (primary) + Firebase 동기화
+                setSyncStatus('saving');
+                fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(state.projects)
+                }).then(r => {
+                    if (r.ok) setSyncStatus('synced');
+                    else throw new Error('Server save failed');
+                }).catch(err => {
+                    console.error('서버 저장 실패:', err);
+                    setSyncStatus('offline');
+                });
+
+                // Firebase에도 동기화
+                if (firebaseEnabled && _firebaseRef && !_syncingFromFirebase) {
+                    _firebaseRef.set(state.projects).catch(err => {
+                        console.warn('Firebase 동기화 실패:', err.message);
+                    });
+                }
+
+                // localStorage 백업
                 _safeLocalStorageSet('ganttManagerState', JSON.stringify({
-                    projects: state.projects,
-                    currentProjectId: state.currentProjectId,
-                    filterCompleted: state.filterCompleted,
-                    collapsedGroups: state.collapsedGroups
+                    projects: state.projects
                 }));
             }
         }

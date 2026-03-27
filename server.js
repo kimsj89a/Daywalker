@@ -185,6 +185,34 @@ app.post('/api/sync', async (req, res) => {
     }
 });
 
+// ========== Project Data API ==========
+const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
+
+app.get('/api/projects', (req, res) => {
+    try {
+        if (fs.existsSync(PROJECTS_FILE)) {
+            const data = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf-8'));
+            res.json(data);
+        } else {
+            res.json([]);
+        }
+    } catch (err) {
+        console.error('Load projects error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/projects', (req, res) => {
+    try {
+        const projects = req.body;
+        fs.writeFileSync(PROJECTS_FILE, JSON.stringify(projects, null, 2));
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('Save projects error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ========== AI Auto-Fill (Anthropic Claude) ==========
 app.post('/api/ai/sticker-classify', async (req, res) => {
     const apiKey = process.env.ANTHROPIC_API_KEY;

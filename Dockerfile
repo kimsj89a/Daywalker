@@ -3,6 +3,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY server.js Workflow.html Widget.html ./
-RUN mkdir -p data
+RUN mkdir -p data seed
+COPY data/projects.json seed/projects.json
+COPY start.sh ./
+RUN chmod +x start.sh
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["sh", "start.sh"]

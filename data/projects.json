@@ -1,0 +1,972 @@
+[
+  {
+    "id": "mlakkzijzb97mlo2cd",
+    "name": "Top Priority",
+    "type": "separator"
+  },
+  {
+    "color": "#feca57",
+    "createdAt": "2026-01-29T02:01:52.832Z",
+    "description": "",
+    "group": "Company Issue",
+    "id": "mkyt6da8nb07rh03s4",
+    "name": "리벨리온 후속투자",
+    "stickers": [
+      {
+        "amount": 0,
+        "assignee": "",
+        "category": "lp",
+        "company": "",
+        "createdAt": "2026-03-18T12:44:54.886Z",
+        "height": 298,
+        "id": "mmw1a7dyd8s98e9mlmi",
+        "memo": "[운용사: 노앤파트너스] & [대상회사: 리벨리온]\n- 사업자등록증 (원본대조필)\n- 등기부등본 (발급 3m 이내)\n- 인감증명서 (발급 3m 이내)\n- 정관 (원본대조필)\n- 주주명부 (원본대조필)\n- 대표자 및 최대주주 신붅증\n \n향후 4월 중 PEF가 설립되면, PEF에 대한 서류 또한 요청드릴 예정입니다.\n(GP에 대한 CDD가 완료되면 해당 절차는 간소화될 수 있을 것으로 보입니다)",
+        "status": "contacted",
+        "title": "신한증권 CDD 정현우",
+        "updatedAt": "2026-03-23T14:00:10.176Z",
+        "width": 555,
+        "x": 128,
+        "y": 21
+      },
+      {
+        "amount": 0,
+        "assignee": "KSJ",
+        "category": "lp",
+        "company": "KB캐피탈",
+        "createdAt": "2026-03-19T00:00:51.652Z",
+        "id": "mmwpfh6stl52t9edcos",
+        "memo": "26년 현재까지 매출추이 추가 팔로업",
+        "status": "qa_reviewing",
+        "title": "맹원주",
+        "updatedAt": "2026-03-23T14:00:08.139Z",
+        "x": 126,
+        "y": 328
+      },
+      {
+        "amount": 0,
+        "assignee": "유이찬",
+        "category": "lp",
+        "company": "",
+        "createdAt": "2026-03-19T00:43:45.998Z",
+        "id": "mmwqynke7ynakqjm1k5",
+        "memo": "리벨 실사 어레인지(월요일)",
+        "status": "contacted",
+        "title": "한국증권금융",
+        "updatedAt": "2026-03-23T14:00:09.349Z",
+        "x": 802,
+        "y": 29
+      },
+      {
+        "amount": 0,
+        "assignee": "유이찬",
+        "category": "lp",
+        "company": "",
+        "createdAt": "2026-03-19T00:43:59.284Z",
+        "id": "mmwqyxtgp8yhfgf3sfl",
+        "memo": "노앤 심사팀 미팅: 수요일 9:30",
+        "status": "contacted",
+        "title": "한국증권금융",
+        "updatedAt": "2026-03-23T14:00:09.798Z",
+        "x": 982,
+        "y": 27
+      },
+      {
+        "amount": 0,
+        "assignee": "",
+        "category": "deal",
+        "company": "",
+        "createdAt": "2026-03-19T04:40:00.378Z",
+        "height": 232,
+        "id": "mmwzegl6ov607wcs67",
+        "memo": "대상회사: 리벨리온]\n- 사업자등록증 (원본대조필)\n- 등기부등본 (발급 3m 이내)\n- 인감증명서 (발급 3m 이내)\n- 정관 (원본대조필)\n- 주주명부 (원본대조필)\n- 대표자 및 최대주주 신붅증",
+        "status": "dd",
+        "title": "리벨리온에 요청할거: 신한증권 CDD, 한국증권금융 실사준비",
+        "updatedAt": "2026-03-23T14:00:08.851Z",
+        "width": 746,
+        "x": 722,
+        "y": 210
+      },
+      {
+        "amount": 0,
+        "assignee": "맹원주",
+        "category": "lp",
+        "company": "",
+        "createdAt": "2026-03-23T07:27:31.440Z",
+        "height": 219,
+        "id": "mn2v5apc29vrejcoxum",
+        "memo": "예상 매출 내 REBEL IO, REBEL CPU 비중이 높은데, 개발 단계는 어느정도인지 확인 부탁드립니다.",
+        "status": "contacted",
+        "title": "kb캐피탈",
+        "updatedAt": "2026-03-23T14:00:08.540Z",
+        "width": 293,
+        "x": 355,
+        "y": 326
+      }
+    ],
+    "tasks": [
+      {
+        "color": "#feca57",
+        "createdAt": "2026-01-29T02:02:26.048Z",
+        "endDate": "2026-02-04",
+        "id": "mkyt72wwnpieqe4lcue",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "산은 간투실과 협의 내용 F/U",
+        "progress": 100,
+        "startDate": "2026-02-04"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-02-06T07:35:02.109Z",
+        "endDate": "2026-02-11",
+        "id": "mlaklmfxbfhe5lo2d78",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "티저완성",
+        "progress": 100,
+        "startDate": "2026-02-06"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-02-08T10:31:36.654Z",
+        "endDate": "2026-02-09",
+        "id": "mldlsekta3zybpefp6w",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "예비검토위원회",
+        "progress": 100,
+        "startDate": "2026-02-09"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-02-08T13:00:29.722Z",
+        "endDate": "2026-02-13",
+        "id": "mldr3vdm3jt6qf81hok",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "RFI",
+        "progress": 100,
+        "startDate": "2026-02-09"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-02-11T07:08:38.396Z",
+        "endDate": "2026-03-05",
+        "id": "mlhouxrwcid7uk4fcsj",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "LP연락",
+        "progress": 100,
+        "startDate": "2026-02-11"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-03-06T10:11:54.392Z",
+        "endDate": "2026-03-13",
+        "id": "mmeqj7o8zz1h722ig3",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "오전까지 수출입은행에 PPT전달",
+        "progress": 100,
+        "startDate": "2026-03-13"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-03-16T06:53:34.704Z",
+        "endDate": "2026-03-20",
+        "id": "mmstuohcjaav05g99us",
+        "lastModified": "2026-03-16T06:53:34.705Z",
+        "memo": "",
+        "name": "LP심사대응",
+        "progress": 0,
+        "startDate": "2026-03-16"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-03-17T05:06:21.507Z",
+        "endDate": "2026-03-17",
+        "id": "mmu5gn9fczhi0roodhj",
+        "lastModified": "2026-03-17T05:06:21.808Z",
+        "memo": "",
+        "name": "얼마올릴지 언제올릴지 확인",
+        "progress": 0,
+        "startDate": "2026-03-17"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-03-17T05:07:22.702Z",
+        "endDate": "2026-03-17",
+        "id": "mmu5hyha40x985wthoj",
+        "lastModified": "2026-03-17T05:07:23.006Z",
+        "memo": "",
+        "name": "투심보고서 정리 전달",
+        "progress": 0,
+        "startDate": "2026-03-17"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#1dd1a1",
+    "createdAt": "2026-03-06T10:01:57.909Z",
+    "description": "",
+    "id": "mmeq6ff9sibcan4zmz",
+    "name": "FDC",
+    "stickers": [
+      {
+        "amount": 0,
+        "assignee": "",
+        "category": "deal",
+        "createdAt": "2026-03-18T04:13:10.146Z",
+        "id": "mmvj03gi4ri89pnevud",
+        "memo": "",
+        "status": "reviewing",
+        "title": "MOU 업데이트",
+        "updatedAt": "2026-03-18T04:13:11.289Z",
+        "x": 64,
+        "y": 0
+      }
+    ],
+    "tasks": [
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-03-06T10:02:14.638Z",
+        "endDate": "2026-03-11",
+        "id": "mmeq6sbyiyexrclm1x",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "출장",
+        "progress": 100,
+        "startDate": "2026-03-11"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-03-06T10:02:27.468Z",
+        "endDate": "2026-03-09",
+        "id": "mmeq728c3nmg4h83gfm",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "출장 전 스터디",
+        "progress": 100,
+        "startDate": "2026-03-07"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-03-16T01:50:22.136Z",
+        "endDate": "2026-03-20",
+        "id": "mmsj0r087udiyo61yz9",
+        "lastModified": "2026-03-16T04:30:18.874Z",
+        "memo": "",
+        "name": "예비검토 작성",
+        "progress": 0,
+        "startDate": "2026-03-16"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#00d2d3",
+    "createdAt": "2026-01-29T02:03:16.134Z",
+    "description": "삼일 류경식 이사",
+    "group": "SJ",
+    "id": "mkyt85k6ivh6bji4sa",
+    "name": "깨끗한나라",
+    "stickers": [
+      {
+        "amount": 0,
+        "assignee": "",
+        "category": "deal",
+        "company": "",
+        "createdAt": "2026-03-19T04:32:08.789Z",
+        "height": 191,
+        "id": "mmwz4cphr05aeeuwq7c",
+        "memo": "",
+        "status": "negotiating",
+        "title": "삼일에 피드백 - LOI 어떻게 써야되냐?",
+        "updatedAt": "2026-03-19T04:32:08.789Z",
+        "width": 373,
+        "x": 169,
+        "y": 55
+      }
+    ],
+    "tasks": [
+      {
+        "color": "#48dbfb",
+        "createdAt": "2026-01-29T02:04:15.951Z",
+        "endDate": "2026-02-01",
+        "id": "mkyt9fprafz8u2tlhl",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "차입금 상환구조 검토(크레딧성)",
+        "progress": 100,
+        "startDate": "2026-01-29"
+      },
+      {
+        "color": "#48dbfb",
+        "createdAt": "2026-01-29T02:03:43.712Z",
+        "endDate": "2026-02-10",
+        "id": "mkyt8qu80919fnvgech4",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "딜 구조 제안",
+        "progress": 100,
+        "startDate": "2026-02-04"
+      },
+      {
+        "color": "#48dbfb",
+        "createdAt": "2026-02-10T08:21:09.471Z",
+        "endDate": "2026-02-12",
+        "id": "mlgc0cf39c75f8bqwyg",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "capa, 스팀 사용량, 소각원가 수준 등 unit economics",
+        "name": "소각장 질문",
+        "progress": 100,
+        "startDate": "2026-02-10"
+      },
+      {
+        "color": "#00d2d3",
+        "createdAt": "2026-02-12T08:48:53.656Z",
+        "endDate": "2026-02-23",
+        "id": "mlj7vpugyv6r3acdz8e",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "삼일연락 대기",
+        "progress": 100,
+        "startDate": "2026-02-23"
+      },
+      {
+        "color": "#00d2d3",
+        "createdAt": "2026-02-19T00:46:17.072Z",
+        "endDate": "2026-02-20",
+        "id": "mlsqq1gwpcmd1823lgn",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "원익 방지호 연락",
+        "progress": 100,
+        "startDate": "2026-02-19"
+      },
+      {
+        "color": "#00d2d3",
+        "createdAt": "2026-03-19T04:31:43.214Z",
+        "endDate": "2026-03-19",
+        "id": "mmwz3sz2fhbb5dcmi9w",
+        "lastModified": "2026-03-19T04:31:43.517Z",
+        "memo": "",
+        "name": "삼일에 피드백 드리기",
+        "progress": 0,
+        "startDate": "2026-03-19"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#54a0ff",
+    "createdAt": "2026-02-23T13:55:51.626Z",
+    "description": "",
+    "id": "mlz8oukqr16stvy52bf",
+    "name": "Pjt Care(씨젠 해외 진단)",
+    "stickers": [
+      {
+        "amount": 0,
+        "assignee": "",
+        "category": "deal",
+        "company": "",
+        "createdAt": "2026-03-19T04:05:06.395Z",
+        "id": "mmwy5kuzskyjc8fc4v8",
+        "memo": "",
+        "status": "reviewing",
+        "title": "대상회사 스터디",
+        "updatedAt": "2026-03-19T04:05:07.755Z",
+        "x": 149,
+        "y": 38
+      }
+    ],
+    "tasks": [
+      {
+        "color": "#54a0ff",
+        "createdAt": "2026-02-23T14:00:40.782Z",
+        "endDate": "2026-02-24",
+        "id": "mlz8v1oudetvk19b1ip",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "삼정 연락",
+        "progress": 100,
+        "startDate": "2026-02-23"
+      },
+      {
+        "color": "#54a0ff",
+        "createdAt": "2026-03-06T10:04:14.643Z",
+        "endDate": "2026-03-09",
+        "id": "mmeq9cxfi4op1adu9z",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "삼정 미팅",
+        "progress": 100,
+        "startDate": "2026-03-09"
+      },
+      {
+        "color": "#54a0ff",
+        "createdAt": "2026-03-16T06:41:27.611Z",
+        "endDate": "2026-03-19",
+        "id": "mmstf3gbki8xgnv1j9k",
+        "lastModified": "2026-03-18T13:16:45.864Z",
+        "memo": "",
+        "name": "LOI 제출",
+        "progress": 0,
+        "startDate": "2026-03-18"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#ff6b6b",
+    "createdAt": "2026-03-16T01:49:48.440Z",
+    "description": "",
+    "id": "mmsj0108gynq7qf1z7",
+    "name": "Pjt Grape",
+    "tasks": [
+      {
+        "color": "#ff6b6b",
+        "createdAt": "2026-03-16T01:49:58.080Z",
+        "endDate": "2026-03-16",
+        "id": "mmsj08g054iiw3ndz4a",
+        "lastModified": "2026-03-16T04:30:18.874Z",
+        "memo": "",
+        "name": "wp작성",
+        "progress": 0,
+        "startDate": "2026-03-16"
+      },
+      {
+        "color": "#ff6b6b",
+        "createdAt": "2026-03-16T01:50:12.328Z",
+        "endDate": "2026-03-20",
+        "id": "mmsj0jfs5h3t1dd4956",
+        "lastModified": "2026-03-16T04:30:18.874Z",
+        "memo": "",
+        "name": "삼일 미팅 팔로업",
+        "progress": 0,
+        "startDate": "2026-03-17"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#1dd1a1",
+    "createdAt": "2026-01-30T07:35:24.871Z",
+    "description": "",
+    "group": "Company Issue",
+    "id": "ml0kj5c77zu5mfyi0mx",
+    "name": "신영중전기",
+    "stickers": [
+      {
+        "amount": 0,
+        "assignee": "황인건",
+        "category": "deal",
+        "company": "",
+        "createdAt": "2026-03-19T08:05:58.268Z",
+        "id": "mmx6rbzw6s2ds51ti3h",
+        "memo": "예비투심보고서 작성중\n- Financials까지 완료",
+        "status": "in_progress",
+        "title": "예비투심보고서",
+        "updatedAt": "2026-03-19T08:06:04.146Z",
+        "x": 88,
+        "y": 17
+      }
+    ],
+    "tasks": [
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-01-30T07:35:50.239Z",
+        "endDate": "2026-02-10",
+        "id": "ml0kjowv1b0x84w86b9k",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "출장",
+        "progress": 100,
+        "startDate": "2026-02-10"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-01-30T07:36:12.013Z",
+        "endDate": "2026-02-09",
+        "id": "ml0kk5pplo71vjv1i",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "스터디, Key Issue 파악",
+        "progress": 100,
+        "startDate": "2026-01-30"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-01-30T07:36:20.205Z",
+        "endDate": "2026-02-03",
+        "id": "ml0kkc197h8is139qeh",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "MOU 초안",
+        "progress": 100,
+        "startDate": "2026-01-30"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-02-03T06:03:16.807Z",
+        "dependencies": [
+          "ml0kkc197h8is139qeh"
+        ],
+        "endDate": "2026-02-04",
+        "id": "ml6702ivls7xqcbqtl8",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "ㄴ내부검토",
+        "progress": 100,
+        "startDate": "2026-02-03"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-02-03T06:03:26.519Z",
+        "dependencies": [
+          "ml6702ivls7xqcbqtl8"
+        ],
+        "endDate": "2026-02-04",
+        "id": "ml670a0nqbszp8wpasf",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "ㄴ김호량대표 검토",
+        "progress": 100,
+        "startDate": "2026-02-03"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-02-10T08:21:31.115Z",
+        "endDate": "2026-02-14",
+        "id": "mlgc0t4bund0twwaii",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "RFI, 자료검토",
+        "progress": 0,
+        "startDate": "2026-02-10"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-03-06T10:01:50.005Z",
+        "endDate": "2026-03-10",
+        "id": "mmeq69bp24wvqtyoy9e",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "출장",
+        "progress": 0,
+        "startDate": "2026-03-10"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-03-16T01:50:38.033Z",
+        "endDate": "2026-03-20",
+        "id": "mmsj139tu6jws0fme69",
+        "lastModified": "2026-03-16T04:30:18.874Z",
+        "memo": "",
+        "name": "예비실사 진행",
+        "progress": 0,
+        "startDate": "2026-03-16"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "id": "ml2a2kd5xuyckigvcpe",
+    "name": "Company Issue",
+    "type": "separator"
+  },
+  {
+    "color": "#5f27cd",
+    "createdAt": "2026-03-17T05:08:50.623Z",
+    "description": "",
+    "id": "mmu5jubjg1v1mn7oxiu",
+    "name": "큐리언트",
+    "tasks": [
+      {
+        "color": "#5f27cd",
+        "createdAt": "2026-03-17T05:09:19.139Z",
+        "endDate": "2026-03-18",
+        "id": "mmu5kgbnb0eht86ny1",
+        "lastModified": "2026-03-17T05:09:19.446Z",
+        "memo": "",
+        "name": "산은 바이오 팀장 만난내용 FU",
+        "progress": 0,
+        "startDate": "2026-03-18"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#feca57",
+    "createdAt": "2026-01-30T07:33:36.622Z",
+    "description": "",
+    "group": "Company Issue",
+    "id": "ml0kgttabr06u2mfofq",
+    "name": "LIG넥스원 협력사 스터디",
+    "tasks": [
+      {
+        "color": "#feca57",
+        "createdAt": "2026-01-30T07:34:00.149Z",
+        "endDate": "2026-02-03",
+        "id": "ml0khbytgdu1y5nfes7",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "케이엠 이엔지",
+        "progress": 100,
+        "startDate": "2026-01-30"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-01-30T07:34:19.846Z",
+        "endDate": "2026-02-03",
+        "id": "ml0khr5yommfw8g2hu",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "A사",
+        "progress": 100,
+        "startDate": "2026-01-30"
+      },
+      {
+        "color": "#feca57",
+        "createdAt": "2026-01-30T07:34:23.806Z",
+        "endDate": "2026-02-03",
+        "id": "ml0khu7yo80nd3y4tf8",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "B사",
+        "progress": 100,
+        "startDate": "2026-01-30"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#feca57",
+    "createdAt": "2026-02-23T23:36:16.362Z",
+    "description": "",
+    "id": "mlztf9ii0th3rwev1jb",
+    "name": "유엑스엔",
+    "type": "project"
+  },
+  {
+    "id": "ml2a2kd5ia98zcdfep",
+    "name": "SJ",
+    "type": "separator"
+  },
+  {
+    "color": "#ff9ff3",
+    "createdAt": "2026-02-23T14:00:31.633Z",
+    "description": "",
+    "id": "mlz8uump2wrl0w2n6he",
+    "name": "Pjt Giant(자이언엔텍, 베어링)",
+    "tasks": [
+      {
+        "color": "#ff9ff3",
+        "createdAt": "2026-02-23T14:00:46.025Z",
+        "endDate": "2026-02-24",
+        "id": "mlz8v5qhb06xbvsr3mc",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "삼정 연락",
+        "progress": 0,
+        "startDate": "2026-02-23"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#54a0ff",
+    "createdAt": "2026-01-29T07:55:38.907Z",
+    "description": "",
+    "group": "Personal",
+    "id": "mkz5tbffjjdkuaeqd6",
+    "name": "다락",
+    "tasks": [
+      {
+        "color": "#54a0ff",
+        "createdAt": "2026-01-29T07:55:52.219Z",
+        "endDate": "2026-02-13",
+        "id": "mkz5tlp7ajxphtz5ygs",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "미팅 전 구조 고민",
+        "progress": 0,
+        "startDate": "2026-02-09"
+      },
+      {
+        "color": "#54a0ff",
+        "createdAt": "2026-01-29T07:56:12.077Z",
+        "endDate": "2026-02-13",
+        "id": "mkz5u10tlah6xqcy0m",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "리딩자산운용 미팅",
+        "progress": 0,
+        "startDate": "2026-02-13"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#5f27cd",
+    "createdAt": "2026-01-29T05:26:16.255Z",
+    "description": "",
+    "group": "Personal",
+    "id": "mkz0h7sv1gqwf6dtt5j",
+    "name": "개암",
+    "tasks": [
+      {
+        "color": "#5f27cd",
+        "createdAt": "2026-01-29T05:26:45.816Z",
+        "endDate": "2026-01-19",
+        "id": "mkz0hum0i553k2rd56a",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "젠파트너스 미팅",
+        "progress": 100,
+        "startDate": "2026-01-19"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "id": "ml2a2kd58atvigmakvk",
+    "name": "KBH",
+    "type": "separator"
+  },
+  {
+    "color": "#ff9ff3",
+    "createdAt": "2026-01-30T07:41:14.148Z",
+    "description": "",
+    "group": "KBH",
+    "id": "ml0kqmucela9tfncodm",
+    "name": "마드라스체크",
+    "tasks": [
+      {
+        "color": "#ff9ff3",
+        "createdAt": "2026-01-30T07:41:26.325Z",
+        "endDate": "2026-02-04",
+        "id": "ml0kqw8l1nmb0jo03gz",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "IR",
+        "progress": 100,
+        "startDate": "2026-02-04"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#54a0ff",
+    "createdAt": "2026-03-19T02:16:49.991Z",
+    "description": "",
+    "id": "mmwuac7bibmup40z68",
+    "name": "Crystal",
+    "type": "project"
+  },
+  {
+    "id": "ml2a2kd59qq90y3i54a",
+    "name": "Personal",
+    "type": "separator"
+  },
+  {
+    "color": "#e94560",
+    "createdAt": "2026-01-29T01:17:03.075Z",
+    "description": "",
+    "group": "SJ",
+    "id": "mkyrkpurfavumtfudk",
+    "name": "모던텍(전기차 충전)",
+    "tasks": [
+      {
+        "color": "#ff6b6b",
+        "createdAt": "2026-01-29T01:17:20.089Z",
+        "endDate": "2026-01-30",
+        "id": "mkyrl2zdl9uxg6cmtbi",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "IR",
+        "progress": 100,
+        "startDate": "2026-01-30"
+      },
+      {
+        "color": "#ff6b6b",
+        "createdAt": "2026-01-29T01:49:40.899Z",
+        "endDate": "2026-02-06",
+        "id": "mkysqoirwk5gpaj66x",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "투자조건 제시",
+        "progress": 100,
+        "startDate": "2026-02-03"
+      },
+      {
+        "color": "#e94560",
+        "createdAt": "2026-02-10T08:22:40.146Z",
+        "endDate": "2026-02-11",
+        "id": "mlgc2aduh538ztxwu5g",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "성현회계법인 미팅",
+        "progress": 100,
+        "startDate": "2026-02-11"
+      },
+      {
+        "color": "#e94560",
+        "createdAt": "2026-02-12T08:48:07.927Z",
+        "endDate": "2026-02-13",
+        "id": "mlj7uqk7eb3nsfx21gc",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "구제금융 알아봐주기",
+        "progress": 0,
+        "startDate": "2026-02-12"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#1dd1a1",
+    "createdAt": "2026-01-29T01:17:54.297Z",
+    "description": "매각",
+    "group": "SJ",
+    "id": "mkyrltdl48wk43mbllz",
+    "name": "지앤지인텍(UPW, 에코랩)",
+    "tasks": [
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-01-29T01:54:39.930Z",
+        "endDate": "2026-01-29",
+        "id": "mkysx396tlr1ylwyub",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "에코랩 만나볼 의향 있음",
+        "name": "이가윤 대표 전화하기",
+        "progress": 100,
+        "startDate": "2026-01-29"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-01-30T07:58:24.123Z",
+        "endDate": "2026-02-02",
+        "id": "ml0lcpkrwuiy7akj3v",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "에코랩 설명 확인",
+        "progress": 100,
+        "startDate": "2026-01-30"
+      },
+      {
+        "color": "#1dd1a1",
+        "createdAt": "2026-02-03T08:04:16.576Z",
+        "dependencies": [
+          "mkz08zdlq5vvlfhs8de"
+        ],
+        "endDate": "2026-02-04",
+        "id": "ml6bbo74dkakeh22fds",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "이가윤 대표 전화",
+        "progress": 100,
+        "startDate": "2026-02-03"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#ff6b6b",
+    "createdAt": "2026-02-01T04:06:19.553Z",
+    "description": "",
+    "id": "ml37xyn5oe1mepdgbz9",
+    "name": "Dev",
+    "tasks": [
+      {
+        "color": "#48dbfb",
+        "createdAt": "2026-02-01T04:06:43.342Z",
+        "endDate": "2026-02-28",
+        "id": "ml37ygzym872bmd9y8p",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "GemIntern 고도화",
+        "progress": 0,
+        "startDate": "2026-02-01"
+      },
+      {
+        "color": "#48dbfb",
+        "createdAt": "2026-02-01T04:18:29.630Z",
+        "endDate": "2026-02-10",
+        "id": "ml38dlz2jvxs0875mh",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "- RAG형태로 개선",
+        "progress": 100,
+        "startDate": "2026-02-01"
+      },
+      {
+        "color": "#ff6b6b",
+        "createdAt": "2026-02-01T04:06:59.385Z",
+        "endDate": "2026-02-20",
+        "id": "ml37ytdlnv5vpvaq8c",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "관세청 잠정치 API",
+        "progress": 0,
+        "startDate": "2026-02-01"
+      },
+      {
+        "color": "#5f27cd",
+        "createdAt": "2026-02-08T09:18:17.421Z",
+        "endDate": "2026-02-15",
+        "id": "mldj643wcx6dj3a9rna",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "Chatbot",
+        "progress": 0,
+        "startDate": "2026-02-08"
+      },
+      {
+        "color": "#ff9ff3",
+        "createdAt": "2026-02-08T09:18:29.374Z",
+        "endDate": "2026-02-15",
+        "id": "mldj6dbyxlq51ay60we",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "Influencer",
+        "progress": 0,
+        "startDate": "2026-02-08"
+      }
+    ],
+    "type": "project"
+  },
+  {
+    "color": "#ff9ff3",
+    "createdAt": "2026-02-11T13:17:22.992Z",
+    "description": "",
+    "id": "mli21580z40434ipzg",
+    "name": "연락돌리기",
+    "tasks": [
+      {
+        "color": "#ff9ff3",
+        "createdAt": "2026-02-11T13:17:33.461Z",
+        "endDate": "2026-02-12",
+        "id": "mli21dat3ojotl11blr",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "윤태경 점심잠기",
+        "progress": 0,
+        "startDate": "2026-02-12"
+      },
+      {
+        "color": "#ff9ff3",
+        "createdAt": "2026-02-11T13:17:45.296Z",
+        "endDate": "2026-02-12",
+        "id": "mli21mfki0ff3qn7mmm",
+        "lastModified": "2026-03-16T04:24:58.796Z",
+        "memo": "",
+        "name": "장현진 점심잡기",
+        "progress": 0,
+        "startDate": "2026-02-12"
+      }
+    ],
+    "type": "project"
+  }
+]
